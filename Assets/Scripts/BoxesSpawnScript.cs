@@ -50,7 +50,7 @@ public class BoxesSpawnScript : MonoBehaviour
         m_numBoxesPerType[(int)type]++;
 
         int thisBoxId = m_globalId++;
-        m_boxesDict.Add(m_globalId, type);
+        m_boxesDict.Add(thisBoxId, type);
 
         return thisBoxId;
     }
