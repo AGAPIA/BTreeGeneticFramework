@@ -20,6 +20,17 @@ public enum BoxType
 
 public class BoxesSpawnScript : MonoBehaviour
 {
+    private string[] BoxTypeTagStrings = new string[(int)BoxType.BOXTYPE_NUMS]
+    {
+        "Box_Ammo",
+        "Box_Shield",
+        "Box_WeaponUpgrade",
+        "Box_HP",
+        "Box_Life",
+    };
+
+    public string GetTagForBoxType(BoxType type) { return BoxTypeTagStrings[(int)type]; }
+
     public int MaxNumberOfBoxesPerType = 10;
     public float TimeInSecondsBetweenBoxSpawn = 3.0f;
     public GameObject[] m_boxPrefab = new GameObject[(int)BoxType.BOXTYPE_NUMS];
@@ -95,8 +106,14 @@ public class BoxesSpawnScript : MonoBehaviour
             BoxType chosenType = BoxType.BOXTYPE_NUMS;
             {
                 m_tempAvailableTypes_count = 0;
+
+                //Used for debug to spawn only a certain box type
+                int forcedSpawnBoxType = (int)BoxType.BOXTYPE_NUMS; //(int)BoxType.BOXTYPE_HEALTH;//
                 for (int i = 0; i < (int)BoxType.BOXTYPE_NUMS; i++)
                 {
+                    if (forcedSpawnBoxType != (int)BoxType.BOXTYPE_NUMS && i != forcedSpawnBoxType)
+                        continue;
+
                     if (m_numBoxesPerType[i] < MaxNumberOfBoxesPerType)
                     {
                         m_tempAvailableTypes[m_tempAvailableTypes_count++] = (BoxType)i;

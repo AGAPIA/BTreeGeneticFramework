@@ -1,7 +1,6 @@
 ﻿using System;
 using UnityEngine;
 
-
 [Serializable]
 public class TankManager
 {
@@ -9,7 +8,6 @@ public class TankManager
     // It works with the GameManager class to control how the tanks behave
     // and whether or not players have control of their tank in the 
     // different phases of the game.
-
 
     [HideInInspector] public Color m_PlayerColor;                             // This is the color this tank will be tinted.
     [HideInInspector]
@@ -24,18 +22,25 @@ public class TankManager
     [HideInInspector]
     public Transform m_SpawnPoint;
 
-    
-    private TankMovement m_Movement;                        // Reference to tank's movement script, used to disable and enable control.
-    private TankShooting m_Shooting;                        // Reference to tank's shooting script, used to disable and enable control.
-    private TankHealth m_Health;
-    private AIBehavior m_AI;
-    private GameObject m_CanvasGameObject;                  // Used to disable the world space UI during the Starting and Ending phases of each round.
-    private BoxAddonBehavior m_Addons;
+    [HideInInspector]
+    public TankMovement m_Movement;                        // Reference to tank's movement script, used to disable and enable control.
+    [HideInInspector]
+    public TankShooting m_Shooting;                        // Reference to tank's shooting script, used to disable and enable control.
+    [HideInInspector]
+    public TankHealth m_Health;
+    [HideInInspector]
+    public AIBehavior m_AI;
+    [HideInInspector]
+    public GameObject m_CanvasGameObject;                  // Used to disable the world space UI during the Starting and Ending phases of each round.
+    [HideInInspector]
+    public BoxAddonBehavior m_Addons;
 
     [HideInInspector]
     public GlobalAIBlackBox m_AIGlobalBlackBox;
 
-    public void Setup()
+    TankUI m_tankUI;
+
+    public void Setup(bool enableTextUI)
     {
         // Get references to the components.
         m_Movement = m_Instance.GetComponent<TankMovement>();
@@ -69,6 +74,14 @@ public class TankManager
             // ... set their material color to the color specific to this tank.
             renderers[i].material.color = m_PlayerColor;
         }
+
+        m_tankUI = new TankUI();
+
+        m_AI.m_tankUI = m_tankUI;
+        if (enableTextUI)
+        {
+            m_tankUI.Setup(this);
+        }
     }
 
     public void SetPlayerAsHuman(int humanId)
@@ -84,7 +97,7 @@ public class TankManager
         m_AI.enabled = true;
         m_AI.SetGlobalBlackbox(aiGlobalBlackBox);
         m_PlayerNumber = id;
-
+        m_AI.m_id = id;
     }
 
 
@@ -118,6 +131,7 @@ public class TankManager
         m_Shooting.ResetComp();
         m_Health.ResetComp();
         m_Addons.ResetComp();
+        m_tankUI.Reset();
 
         m_Instance.SetActive(false);
         m_Instance.SetActive(true);
@@ -126,5 +140,13 @@ public class TankManager
     public bool IsAlive()
     {
         return m_Instance.gameObject.activeInHierarchy; //m_Health.IsAlive();
+    }
+
+    public void Update()
+    {
+        if (m_tankUI != null)
+        {
+            m_tankUI.Update();
+        }
     }
 }

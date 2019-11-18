@@ -9,10 +9,10 @@ BoxCollider:
   m_GameObject: {fileID: 3705237852028837332}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
-  m_Size: {x: 0.31144318, y: 0.7259721, z: 0.47435865}
-  m_Center: {x: -0.14533243, y: -0.000000034309263, z: -0.06985657}
+  m_Size: {x: 1.511299, y: 1.2620043, z: 0.6331077}
+  m_Center: {x: 0.3241424, y: 0.27780098, z: 0.009518027}
 --- !u!114 &1688998748
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -41,6 +41,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Box_Life
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 636cd0f2a00f6674eacba81ce53aabc0, type: 3}
+      propertyPath: m_TagString
+      value: Box_Life
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 636cd0f2a00f6674eacba81ce53aabc0, type: 3}
       propertyPath: m_LocalPosition.x
       value: 10.5
@@ -51,7 +55,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 636cd0f2a00f6674eacba81ce53aabc0, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -9.88
+      value: -10.75
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 636cd0f2a00f6674eacba81ce53aabc0, type: 3}
       propertyPath: m_LocalRotation.x
@@ -87,15 +91,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 636cd0f2a00f6674eacba81ce53aabc0, type: 3}
       propertyPath: m_LocalScale.z
-      value: 7.886981
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 636cd0f2a00f6674eacba81ce53aabc0, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.6885845
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 636cd0f2a00f6674eacba81ce53aabc0, type: 3}
       propertyPath: m_LocalScale.y
-      value: 2.262454
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 636cd0f2a00f6674eacba81ce53aabc0, type: 3}

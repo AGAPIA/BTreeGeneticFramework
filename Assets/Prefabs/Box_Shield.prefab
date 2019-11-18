@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 3323058004716026686}
   m_Layer: 0
   m_Name: Box_Shield
-  m_TagString: Untagged
+  m_TagString: Box_Shield
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -30,7 +30,7 @@ Transform:
   m_GameObject: {fileID: 290042410}
   m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 1.65, y: 0.46, z: -6.17}
-  m_LocalScale: {x: 2.7491143, y: 2.3594809, z: 2.9892044}
+  m_LocalScale: {x: 4, y: 4, z: 4}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -104,10 +104,10 @@ BoxCollider:
   m_GameObject: {fileID: 290042410}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
-  m_Size: {x: 0.5589127, y: 0.7259719, z: 0.3346485}
-  m_Center: {x: -0.021597117, y: 0.000000040219252, z: 7.7716e-23}
+  m_Size: {x: 1.6141753, y: 2.2657113, z: 0.58143896}
+  m_Center: {x: -0.22100484, y: -0.336554, z: -0.00021658796}
 --- !u!114 &3323058004716026686
 MonoBehaviour:
   m_ObjectHideFlags: 0

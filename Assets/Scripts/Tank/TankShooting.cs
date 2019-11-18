@@ -155,4 +155,9 @@ public class TankShooting : MonoBehaviour
     {
         return m_currentAmmo;
     }
+
+    public float GetCurrentAmmoPercent()
+    {
+        return (float)m_currentAmmo / m_maxAmmo;
+    }
 }

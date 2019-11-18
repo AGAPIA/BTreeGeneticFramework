@@ -88,7 +88,7 @@ public class TankHealth : MonoBehaviour
 
         // Interpolate the color of the bar between the choosen colours based on the current percentage of the starting health.
         if (m_FillImage)
-            m_FillImage.color = Color.Lerp(m_ZeroHealthColor, m_FullHealthColor, m_CurrentHealth / m_StartingHealth);
+            m_FillImage.color = Color.Lerp(m_ZeroHealthColor, m_FullHealthColor, GetRemainingLifePercent());
     }
 
     public void MaximizeLife()
@@ -101,6 +101,9 @@ public class TankHealth : MonoBehaviour
     {
         m_CurrentRemainingLives++;
     }
+
+    public int GetRemainingHealths() { return m_CurrentRemainingLives; }
+    public float GetRemainingLifePercent() { return m_CurrentHealth / m_StartingHealth; }
 
     private void OnDeath()
     {

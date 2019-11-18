@@ -3,7 +3,12 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Box_Ammo
+  - Box_HP
+  - Box_Life
+  - Box_Shield
+  - Box_WeaponUpgrade
   layers:
   - Default
   - TransparentFX

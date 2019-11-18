@@ -13,7 +13,20 @@ public class DataContainer : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        // Adding by hand a box collider, it will match the rendering mesh size by default
         //boxDetails = default;
+        gameObject.AddComponent<BoxCollider>();
+
+        /*
+        BoxCollider boxCollider = gameObject.AddComponent<BoxCollider>();
+        If you want to manually scale the boxcollider you can use the following
+
+         MeshRenderer renderer = gameObject.getcomponent<MeshRenderer>();
+        boxCollider.center = renderer.bounds.center;
+        boxCollider.size = renderer.bounds.size;
+
+
+        */
     }
 
     public void SetData(BoxesSpawnScript observer, BoxType _type, int _id)
@@ -26,7 +39,7 @@ public class DataContainer : MonoBehaviour
     private void OnCollisionEnter(Collision collision)
     {
         // Collect all the colliders in a sphere from the shell's current position to a radius of the explosion radius.
-        Collider[] colliders = Physics.OverlapSphere(transform.position, 3, m_TankMask);
+        Collider[] colliders = Physics.OverlapSphere(transform.position, 10, m_TankMask);
 
         // Go through all the colliders...
         for (int i = 0; i < colliders.Length; i++)

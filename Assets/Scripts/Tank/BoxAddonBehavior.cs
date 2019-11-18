@@ -14,7 +14,7 @@ public class BoxAddonBehavior : MonoBehaviour
     public float ShieldActiveTime = 6.0f;
     public float AmmoUpgradeTime = 6.0f;
 
-    class UpgradeInfo
+    public class UpgradeInfo
     {
         public bool isActive = false;
         public float timeRemainingActive = 0.0f;
@@ -27,11 +27,8 @@ public class BoxAddonBehavior : MonoBehaviour
         }
     };
 
-    UpgradeInfo[] m_upgrades = null;
-    Text m_ammoText;
-    Text m_shieldText;
-    Text m_weaponUpgradeText;
-    Text m_numLifesText;
+    [HideInInspector]
+    public UpgradeInfo[] m_upgrades = null;
 
     TankShooting m_ShootingComponent;
     TankHealth m_HealthComponent;
@@ -44,24 +41,6 @@ public class BoxAddonBehavior : MonoBehaviour
         {
             m_upgrades[i] = new UpgradeInfo();
         }
-
-        // Init texts
-        m_ammoText = gameObject.transform.Find("TankTextInfo/Canvas/Text_Ammo").gameObject.GetComponent<Text>();
-        m_ammoText.enabled = true;
-        m_ammoText.text = "Ammo: inf";
-
-        m_shieldText = gameObject.transform.Find("TankTextInfo/Canvas/Text_Shield").gameObject.GetComponent<Text>();
-        m_shieldText.enabled = false;
-        m_upgrades[(int)UpgradeType.E_UPGRADE_SHIELD].refToText = m_shieldText;
-
-        m_weaponUpgradeText = gameObject.transform.Find("TankTextInfo/Canvas/Text_WeaponUpgrade").gameObject.GetComponent<Text>();
-        m_weaponUpgradeText.enabled = false;
-        m_upgrades[(int)UpgradeType.E_UPGRADE_WEAPON].refToText = m_weaponUpgradeText;
-
-
-        m_numLifesText = gameObject.transform.Find("TankTextInfo/Canvas/Text_NumLifes").gameObject.GetComponent<Text>();
-        m_numLifesText.enabled = true;
-        m_numLifesText.text = "L: inf";
 
         m_ShootingComponent = gameObject.GetComponent<TankShooting>();
         m_HealthComponent = gameObject.GetComponent<TankHealth>();
@@ -76,46 +55,12 @@ public class BoxAddonBehavior : MonoBehaviour
                 m_upgrades[i].Reset();
             }
         }
-
-        // If pointers have been cached...
-        if (m_ammoText)
-        {
-            m_ammoText.enabled = false;
-            m_shieldText.enabled = false;
-            m_weaponUpgradeText.enabled = false;
-        }
    }
 
     // Update is called once per frame
     void Update()
     {
-        // Project parent tank pos to 2d screen pos
-        Vector3 screenPos = Camera.main.WorldToScreenPoint(gameObject.transform.position);
 
-        // Set the num lives text and pos
-        screenPos.y -= 15;
-        m_numLifesText.transform.position = screenPos;
-        int numLifes = m_HealthComponent.GetCurrentNumLives(); // TODO: make this an observer and change text only when needed
-        m_numLifesText.text = "L: " + numLifes;
-               
-        // Set the ammo text and pos
-        screenPos.y += 12;
-        m_ammoText.transform.position = screenPos;
-        int currentAmmo = m_ShootingComponent.getCurrentAmmo();
-        m_ammoText.text = "Ammo: " + currentAmmo; // TODO: make this an observer and change text only when needed
-
-        // Set the shielded and weapon upgraded text
-        screenPos.y += 12;
-        if (m_shieldText.enabled)
-        {
-            m_shieldText.transform.position = screenPos;
-        }
-
-        screenPos.y += 12;
-        if (m_weaponUpgradeText.enabled)
-        {
-            m_weaponUpgradeText.transform.position = screenPos;
-        }
     }
 
     public bool IsUpgradeActive(UpgradeType upgradeType)
@@ -134,19 +79,22 @@ public class BoxAddonBehavior : MonoBehaviour
     private void FixedUpdate()
     {
         // Check upgrades timing
-        for(int i = 0; i < (int)UpgradeType.E_NUM_UPGRADES; i++)
+        if (m_upgrades != null)
         {
-            UpgradeInfo upInfo = m_upgrades[i];
-            if (upInfo.isActive)
+            for (int i = 0; i < (int)UpgradeType.E_NUM_UPGRADES; i++)
             {
-                upInfo.timeRemainingActive -= Time.fixedDeltaTime;
-                if (upInfo.timeRemainingActive < 0.0f)
+                UpgradeInfo upInfo = m_upgrades[i];
+                if (upInfo.isActive)
                 {
-                    upInfo.isActive = false;
-
-                    if (upInfo.refToText)
+                    upInfo.timeRemainingActive -= Time.fixedDeltaTime;
+                    if (upInfo.timeRemainingActive < 0.0f)
                     {
-                        upInfo.refToText.enabled = false;
+                        upInfo.isActive = false;
+
+                        if (upInfo.refToText)
+                        {
+                            upInfo.refToText.enabled = false;
+                        }
                     }
                 }
             }

@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Runtime;
+using System.Collections.Generic;
 
 
 static class RandomExtensions
@@ -29,6 +30,8 @@ public class GlobalAIBlackBox
     // Static observations - that don't change over time
     public Transform[] m_SpawnPoints;
     public float[] m_tempDistancesToSpawnPointsSqr; // Closest distance from any tank to each spawnpoint
+
+    public Dictionary<BoxType, List<Vector3>> m_boxPositionsByType = new Dictionary<BoxType, List<Vector3>>();
 
     /////////// Helper functions ///////////
 
@@ -102,12 +105,28 @@ public class GameManager : MonoBehaviour
     [HideInInspector]
     public TankManager[] m_Tanks;               // Union of the two above since it is easier to manager
 
+    private bool m_enableTanksTextUI = true;
+
+    public bool EnableTanksTextUI
+    {
+        get { return m_enableTanksTextUI; }
+        set
+        {
+            if (m_enableTanksTextUI != value)
+            {
+                m_enableTanksTextUI = value;
+            }
+        }
+    }
+
     private int m_RoundNumber;                  // Which round the game is currently on.
     private WaitForSeconds m_StartWait;         // Used to have a delay whilst the round starts.
     private WaitForSeconds m_EndWait;           // Used to have a delay whilst the round or game ends.
     private TankManager m_RoundWinner;          // Reference to the winner of the current round.  Used to make an announcement of who won.
     private TankManager m_GameWinner;           // Reference to the winner of the game.  Used to make an announcement of who won.
     Transform[] m_spawnpoints;                 // The spawnpoints authored on the map
+
+    BoxesSpawnScript m_spawnManager;            // Ref to the spawn manager
 
 
     GlobalAIBlackBox m_AIGlobalBlackBox = new GlobalAIBlackBox();
@@ -120,6 +139,8 @@ public class GameManager : MonoBehaviour
         m_StartWait = new WaitForSeconds(m_StartDelay);
         m_EndWait = new WaitForSeconds(m_EndDelay);
 
+        m_spawnManager = gameObject.GetComponentInChildren<BoxesSpawnScript>();
+
         SpawnAllTanks(true);
         SetCameraTargets();
 
@@ -130,12 +151,35 @@ public class GameManager : MonoBehaviour
     private void Update()
     {
         GatherGlobalBlackboxData();
+
+        for (int i = 0; i < m_HumanTanks.Length + m_AiTanks.Length; i++)
+        {
+            if (!m_Tanks[i].IsAlive())
+                continue;
+
+            m_Tanks[i].Update();
+        }
     }
 
     // This is used to gather data in the global blackbox and make everything visible from environment to the AI side
     private void GatherGlobalBlackboxData()
     {
         m_AIGlobalBlackBox.m_TanksRef = m_Tanks;
+
+        // Gather all box positions by type
+        m_AIGlobalBlackBox.m_boxPositionsByType.Clear();
+        for (int i = 0; i < (int)BoxType.BOXTYPE_NUMS; i++)
+        {
+            BoxType boxType = (BoxType)i;
+            GameObject[] boxObjects = GameObject.FindGameObjectsWithTag(m_spawnManager.GetTagForBoxType(boxType));
+            List<Vector3> listOfBoxPos = new List<Vector3>(boxObjects.Length);
+            foreach (GameObject obj in boxObjects)
+            {
+                listOfBoxPos.Add(obj.transform.position);
+            }
+
+            m_AIGlobalBlackBox.m_boxPositionsByType.Add(boxType, listOfBoxPos);
+        }
     }
 
     private void GatherSpawnPoints()
@@ -178,14 +222,14 @@ public class GameManager : MonoBehaviour
         Color[] colorsToUseForHumans = { Color.red, Color.blue, Color.green, Color.yellow };
         Color AIColor = Color.black;
 
-        m_Tanks = new TankManager[m_HumanTanks.Length + m_AiTanks.Length];
+        m_Tanks = new TankManager[m_AiTanks.Length + m_HumanTanks.Length];
 
-        for (int i = 0; i < m_HumanTanks.Length + m_AiTanks.Length; i++)
+        for (int i = 0; i <  m_AiTanks.Length + m_HumanTanks.Length; i++)
         {
             Transform spawnPointInfo = SpawnPointIteration_next(); // Get A spawn point
 
-            bool spawnAsHuman = i < m_HumanTanks.Length;
-            m_Tanks[i] = spawnAsHuman ? m_HumanTanks[i] : m_AiTanks[i - m_HumanTanks.Length];
+            bool spawnAsHuman = i >= m_AiTanks.Length;
+            m_Tanks[i] = spawnAsHuman ? m_HumanTanks[i - m_AiTanks.Length] : m_AiTanks[i];
             m_Tanks[i].m_SpawnPoint = spawnPointInfo;
 
             // If initial spawn, need to create the objects...
@@ -194,7 +238,7 @@ public class GameManager : MonoBehaviour
                 m_Tanks[i].m_Instance           = Instantiate(m_TankPrefab, spawnPointInfo.position, spawnPointInfo.rotation) as GameObject;
                 m_Tanks[i].m_AIGlobalBlackBox   = m_AIGlobalBlackBox;
 
-                int playerId = i + 1;
+                int playerId = i;
                 if (spawnAsHuman)
                 {
                     m_Tanks[i].SetPlayerAsHuman(playerId);
@@ -206,7 +250,7 @@ public class GameManager : MonoBehaviour
                     m_Tanks[i].m_PlayerColor = AIColor;
                 }
 
-                m_Tanks[i].Setup();
+                m_Tanks[i].Setup(EnableTanksTextUI);
             }
         }        
     }

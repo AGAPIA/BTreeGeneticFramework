@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 232006108}
   m_Layer: 0
   m_Name: Box_HP
-  m_TagString: Untagged
+  m_TagString: Box_HP
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -29,8 +29,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9110293554552154419}
   m_LocalRotation: {x: -0.00000019861236, y: 0.7071068, z: 0.7071068, w: 0.00000019861236}
-  m_LocalPosition: {x: 7.64, y: 0, z: -7.11}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 7.64, y: 0.103, z: -7.11}
+  m_LocalScale: {x: 3, y: 3, z: 3}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -109,7 +109,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_TankMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 512
   boxId: 4
   boxType: 3
 --- !u!65 &232006108
@@ -121,7 +121,7 @@ BoxCollider:
   m_GameObject: {fileID: 9110293554552154419}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
-  m_Size: {x: 0.6021078, y: 0.72597206, z: 0.33464867}
-  m_Center: {x: 8.4703295e-22, y: -0.00000002980233, z: 7.105428e-15}
+  m_Size: {x: 1.2466975, y: 1.251865, z: 0.75210816}
+  m_Center: {x: -0.0071195364, y: 0.011363387, z: 0.025835574}
