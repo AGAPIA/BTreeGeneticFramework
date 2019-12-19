@@ -22,13 +22,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 3705237852028837332}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2d754c8d89bceec469f9431cfef21499, type: 3}
+  m_Script: {fileID: 11500000, guid: 7757804ef9d2d4217953d6ad9565493d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_TankMask:
     serializedVersion: 2
     m_Bits: 512
-  boxId: 1
+  boxId: 0
   boxType: 4
 --- !u!1001 &3705237852028869492
 PrefabInstance:
@@ -47,15 +47,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 636cd0f2a00f6674eacba81ce53aabc0, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 10.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 636cd0f2a00f6674eacba81ce53aabc0, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 636cd0f2a00f6674eacba81ce53aabc0, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -10.75
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 636cd0f2a00f6674eacba81ce53aabc0, type: 3}
       propertyPath: m_LocalRotation.x

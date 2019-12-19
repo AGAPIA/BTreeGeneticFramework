@@ -1,12 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using UnityEngine.AI;
-using System.Collections.Generic;
 
 public enum BoxType
 {
@@ -34,8 +29,15 @@ public class BoxesSpawnScript : MonoBehaviour
     public int MaxNumberOfBoxesPerType = 10;
     public float TimeInSecondsBetweenBoxSpawn = 3.0f;
     public GameObject[] m_boxPrefab = new GameObject[(int)BoxType.BOXTYPE_NUMS];
-    private float m_timeUntilNextSpawn;
+    private float m_timeUntilNextSpawn = 1.0f;
     private System.Random m_random = new System.Random();
+
+    private bool m_spawnOnDemand = false;
+    public bool SpawnOnDemand
+    {
+        get { return m_spawnOnDemand; }
+        set { m_spawnOnDemand = value; }
+    }
 
     public GameObject m_parentForBoxes;
 
@@ -55,13 +57,35 @@ public class BoxesSpawnScript : MonoBehaviour
     }
 
     // Returns the id of the newly spawned box
-    private int spawnBox(BoxType type)
+    public int spawnBox(BoxType type, Vector3 boxPos, Quaternion boxRotation)
     {
+        // Get an id for this box, add it to local dictionary logic
         Debug.Assert(m_numBoxesPerType[(int)type] < MaxNumberOfBoxesPerType);
         m_numBoxesPerType[(int)type]++;
 
         int thisBoxId = m_globalId++;
         m_boxesDict.Add(thisBoxId, type);
+
+
+        // Then create the physical object in the world
+        GameObject prefabTarget = m_boxPrefab[(int)type];
+
+        // Transform the object such that it is fully visible in the world (translate by render bbox size) and rotate it according to prefab rotation
+        Quaternion instanceRotation = boxRotation * prefabTarget.transform.rotation;
+        Vector3 instancePos = boxPos + prefabTarget.transform.position;
+        Bounds prefabBounds = default(Bounds);
+        Renderer prefabRenderer = prefabTarget.GetComponent<Renderer>();
+        if (prefabRenderer)
+        {
+            prefabBounds = prefabRenderer.bounds;
+        }
+        
+        instancePos.y += prefabBounds.size.y * 0.5f;
+        
+        GameObject cloned = Instantiate(prefabTarget, instancePos, instanceRotation, m_parentForBoxes.transform);
+        if (cloned == null || cloned.GetComponent<DataContainer>() == null)
+            Debug.Break();
+        cloned.GetComponent<DataContainer>().SetData(this, type, thisBoxId);
 
         return thisBoxId;
     }
@@ -92,6 +116,9 @@ public class BoxesSpawnScript : MonoBehaviour
 
     void Update()
     {
+        if (SpawnOnDemand)
+            return;
+
         m_timeUntilNextSpawn -= Time.deltaTime;
 
         // Need to spawn a box ?
@@ -100,7 +127,7 @@ public class BoxesSpawnScript : MonoBehaviour
             // Choose the position and orientation
             Vector3 newBoxPos = UtilsNavMesh_Impl.GenerateRandomPointOnMesh();
             Debug.DrawRay(newBoxPos, Vector3.up, Color.blue, 10.0f);
-            Quaternion newBoxQuat = Quaternion.identity;
+            Quaternion newBoxRotation = Quaternion.identity;
 
             // Choose the type to spawn from available ones            
             BoxType chosenType = BoxType.BOXTYPE_NUMS;
@@ -123,13 +150,7 @@ public class BoxesSpawnScript : MonoBehaviour
                 if (m_tempAvailableTypes_count > 0)
                 {
                     chosenType = (BoxType)m_tempAvailableTypes[m_random.Next(0, m_tempAvailableTypes_count)];
-                    int boxId = spawnBox(chosenType);
-                    GameObject cloned = Instantiate(m_boxPrefab[(int)chosenType], newBoxPos, newBoxQuat, m_parentForBoxes.transform);
-
-                    if (cloned == null || cloned.GetComponent<DataContainer>() == null)
-                        Debug.Break();
-
-                    cloned.GetComponent<DataContainer>().SetData(this, chosenType, boxId);
+                    spawnBox(chosenType, newBoxPos, newBoxRotation);
                 }
             }
             

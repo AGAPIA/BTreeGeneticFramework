@@ -17,10 +17,12 @@ public class TankManager
     [HideInInspector]
     public GameObject m_Instance;         // A reference to the instance of the tank when it is created.
     [HideInInspector]
-    public int m_Wins;                    // The number of wins this player has so far.
-
+    public Vector3 m_SpawnPos;
     [HideInInspector]
-    public Transform m_SpawnPoint;
+    public Quaternion m_SpawnRotation;
+
+    // True if this tank is an AI or false if it is a human player
+    public bool IsAI { get { return m_AI.enabled; }}
 
     [HideInInspector]
     public TankMovement m_Movement;                        // Reference to tank's movement script, used to disable and enable control.
@@ -34,12 +36,18 @@ public class TankManager
     public GameObject m_CanvasGameObject;                  // Used to disable the world space UI during the Starting and Ending phases of each round.
     [HideInInspector]
     public BoxAddonBehavior m_Addons;
+    [HideInInspector]
+    public int m_Wins = 0;
+    [HideInInspector]
+    Rigidbody m_RigidBody;
 
     [HideInInspector]
     public GlobalAIBlackBox m_AIGlobalBlackBox;
 
-    TankUI m_tankUI;
-
+    [HideInInspector]
+    public TankUI m_tankUI;
+    bool m_isSetupFinished = false;
+    
     public void Setup(bool enableTextUI)
     {
         // Get references to the components.
@@ -48,6 +56,7 @@ public class TankManager
         m_Health = m_Instance.GetComponent<TankHealth>();
         m_Addons = m_Instance.GetComponent<BoxAddonBehavior>();
         m_CanvasGameObject = m_Instance.GetComponentInChildren<Canvas>().gameObject;
+        m_RigidBody = m_Instance.GetComponent<Rigidbody>();
 
 
         m_Health.m_respawnFunc = new TankHealth.GetRespawnPoint(m_AIGlobalBlackBox.GetBestSpawnPointForRespawn);
@@ -82,8 +91,18 @@ public class TankManager
         {
             m_tankUI.Setup(this);
         }
+
+        m_isSetupFinished = true;
+        m_AI.onSetupFinished();
     }
 
+    public void SetInitialVelocity(Vector3 vel)
+    {
+        m_Movement.m_movingAvgVel = vel;
+        m_RigidBody.velocity = vel;
+    }
+
+   
     public void SetPlayerAsHuman(int humanId)
     {
         m_PlayerNumber = humanId;
@@ -124,8 +143,8 @@ public class TankManager
     // Used at the start of each round to put the tank into it's default state.
     public void Reset()
     {
-        m_Instance.transform.position = m_SpawnPoint.position;
-        m_Instance.transform.rotation = m_SpawnPoint.rotation;
+        m_Instance.transform.position = m_SpawnPos;
+        m_Instance.transform.rotation = m_SpawnRotation;
 
         m_Movement.ResetComp();
         m_Shooting.ResetComp();
@@ -144,6 +163,15 @@ public class TankManager
 
     public void Update()
     {
+        // Prevent the tanks from falling downs anyway
+        if (m_Instance.transform.position.y < 0.0f)
+        {
+            Vector3 actualPos = m_Instance.transform.position;
+            actualPos.y = 0.0f;
+            m_Instance.transform.position = actualPos;
+        }
+
+        // Update display UI
         if (m_tankUI != null)
         {
             m_tankUI.Update();

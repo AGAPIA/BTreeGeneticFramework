@@ -672,10 +672,11 @@ GameObject:
   - component: {fileID: 432309641}
   - component: {fileID: 432309642}
   - component: {fileID: 432309651}
-  - component: {fileID: 3760813986096947443}
+  - component: {fileID: 7268429113668611002}
+  - component: {fileID: 5229181624960764144}
   m_Layer: 9
   m_Name: Tank
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -936,12 +937,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_PlayerNumber: 1
-  m_Speed: 12
   m_TurnSpeed: 180
   m_MovementAudio: {fileID: 8253464}
   m_EngineIdling: {fileID: 8300000, guid: 4932ab25b84dd7649b80af68a9660ddc, type: 3}
   m_EngineDriving: {fileID: 8300000, guid: d7ca9fb5aa30155449192b23d7fb3336, type: 3}
   m_PitchRange: 0.2
+  m_movingAvgVel: {x: 0, y: 0, z: 0}
 --- !u!114 &11417078
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1000,7 +1001,7 @@ NavMeshAgent:
   avoidancePriority: 50
   m_AngularSpeed: 120
   m_StoppingDistance: 0
-  m_AutoTraverseOffMeshLink: 1
+  m_AutoTraverseOffMeshLink: 0
   m_AutoBraking: 1
   m_AutoRepath: 1
   m_Height: 2
@@ -1035,7 +1036,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShieldActiveTime: 25
   AmmoUpgradeTime: 25
---- !u!114 &3760813986096947443
+--- !u!114 &7268429113668611002
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1044,21 +1045,33 @@ MonoBehaviour:
   m_GameObject: {fileID: 159488}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5eb622e159f8f194bb51b018287b2c28, type: 3}
+  m_Script: {fileID: 11500000, guid: 2514303c78d1045c6be17f45a31834b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_minTimeToContinueSameAction: 4
   m_maxTimeToContinueSameAction: 10
-  EnableDebugging: 1
   m_tankMovement: {fileID: 0}
   m_tankShooting: {fileID: 0}
   m_tankHealth: {fileID: 0}
   m_fireTransform: {fileID: 0}
   m_rigidBody: {fileID: 0}
   m_navMeshAgent: {fileID: 0}
+  m_id: -1
   m_EnemyLayerMask:
     serializedVersion: 2
     m_Bits: 512
+--- !u!114 &5229181624960764144
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 159488}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83e16e0ad752b4a59924e7d227c582ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &163644
 GameObject:
   m_ObjectHideFlags: 0
@@ -11169,7 +11182,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 160, y: 30}
+  m_SizeDelta: {x: 160, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7831404483498517747
 CanvasRenderer:
@@ -11186,7 +11199,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3401897938740967580}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 708705254, guid: f70555f144d8491a825f0804e09c671c, type: 3}
   m_Name: 
@@ -11212,4 +11225,4 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Id X State Ssss
+  m_Text: 

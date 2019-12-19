@@ -1,10 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using UnityEngine.AI;
 
 class UtilsNavMesh_Impl
@@ -21,7 +17,6 @@ class UtilsNavMesh_Impl
         m_levelNavMesh.vertices = triangulatedNavMesh.vertices;
         m_levelNavMesh.triangles = triangulatedNavMesh.indices;
         
-
 
         // 1 - Calculate Surface Areas
         float[] triangleSurfaceAreas = CalculateSurfaceAreas(m_levelNavMesh);

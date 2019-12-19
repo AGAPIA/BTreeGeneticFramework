@@ -13,9 +13,33 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
-// Dummy behavior class. All will be derived from this maybe ?
-public class AIBehavior : MonoBehaviour
+// These are actions that needs to be taken whatever utility there is (forced , imposed actions like).
+public class ImminentActions
 {
+    // SHould fire decision + debug info captured about this? 
+    public bool m_fire              = false; 
+    public RaycastHit  lastShootRayHit;
+    public Ray         lastUsedShootRay;
+    public bool        lastShootRayHitTank;
+
+    public ImminentActions() { reset(); }
+
+    public void reset()
+    {
+        m_fire = false;
+        lastShootRayHit = default(RaycastHit);
+        lastUsedShootRay = default(Ray);
+        lastShootRayHitTank = false;
+    }
+};
+
+// Abstract behavior class attached to a tank agent. All will be derived from this
+public abstract class AIBehavior : MonoBehaviour
+{
+    // Imposed actions regardless of their utility
+    public ImminentActions m_iminentActions = new ImminentActions();
+    //-------
+
     public GlobalAIBlackBox m_globalAIBlackBox;
     public LocalAIBlackBoard m_localAIBlackBox;
 
@@ -25,27 +49,9 @@ public class AIBehavior : MonoBehaviour
     // Max time to continue the same decision taken
     public float m_maxTimeToContinueSameAction = 10.0f;
 
-    public bool EnableDebugging = true;
 
-    // Store behavior state and functionality 
-    // --------------------------------------------
-    // Current 
-    public enum BehaviorState
-    {
-        BS_IDLE,
-        BS_DEFEND,
-        BS_ATTACK,
-        BS_FIND_BOX
-    };
+    bool m_isSetupFinished = false;
 
-    BehaviorState m_currentState;
-
-    // The time spent in the current action chosen
-    float m_timeInCurrentAction = 0.0f;
-    float m_targetTimeInCurrentAction = 0.0f; // How much should we spent in this action
-
-    BoxType m_boxLookingFor_type = BoxType.BOXTYPE_NUMS; // Only valid if state is BS_FIND_BOX
-    Vector3 m_boxLookingFor_pos = AIBehaviorActions.s_invalidPos; // Same as above
     // --------------------------------------------
 
     // Gathers informations for the local AI blackboard
@@ -54,45 +60,35 @@ public class AIBehavior : MonoBehaviour
         m_localAIBlackBox.deltaTime = Time.deltaTime;
     }
 
-
-
-    public class DebugInfo 
-    {
-        public Ray lastUsedRay;
-        public RaycastHit lastRayHit;
-        public bool lastRayHitTank;
-        
-
-        public void Reset()
-        {
-            lastUsedRay = default(Ray);
-            lastRayHitTank = false;
-            lastRayHit = default(RaycastHit);
-        }
-    };
-
     public void SetGlobalBlackbox(GlobalAIBlackBox aiGlobalBlackBox)
     {
         m_globalAIBlackBox = aiGlobalBlackBox;
     }
 
     //Rigidbody m_tankRigidBody;
+    [HideInInspector]
     public TankMovement m_tankMovement;
+    [HideInInspector]
     public TankShooting m_tankShooting;
+    [HideInInspector]
     public TankHealth   m_tankHealth;
+    [HideInInspector]
     public Transform m_fireTransform;
+    [HideInInspector]
     public Rigidbody m_rigidBody;
-    public DebugInfo m_debugInfo = new DebugInfo();
+
+    [HideInInspector]
     public NavMeshAgent m_navMeshAgent;
     public TankUI m_tankUI; // For debugging support
     public int m_id = -1;
     public LayerMask m_EnemyLayerMask;
 
-    AIBehaviorActions m_actions;
+    protected AIBehaviorActions m_actions;
 
     // Start is called before the first frame update
     void Start()
     {
+        
         //m_tankRigidBody = gameObject.GetComponent<Rigidbody>();
         m_localAIBlackBox = new LocalAIBlackBoard();
 
@@ -106,290 +102,65 @@ public class AIBehavior : MonoBehaviour
         //m_navMeshAgent.speed = m_tankMovement.m_Speed * GameManager.m_SpeedMultiplier;
         //m_navMeshAgent.angularSpeed = m_tankMovement.m_TurnSpeed * GameManager.m_SpeedMultiplier;
         m_actions       = new AIBehaviorActions(this);
-
-
     }
 
-    // Checks if the current state is finished or not. If yes, choose a new state
-    void CheckCurrentState()
-    {
-        Vector3 thisObjectPos = gameObject.transform.position;
+    // Executes an action based on observations.
+    // Observation are located in blackboxes (local or global), while actions are leveraged to m_actions
+    public abstract void Execute();
 
-        // Simple strategy:
-        // Iminent actions:
-        //  A. If enemy is visible and within shoot range turn to him and shoot ! Otherwise he might shoot us
-        //  B. If low on ammo or health move to get some
-        // Within a limited time, DEFEND
-        // Within a limited time, pathfind and ATTACK
-        // Within a limited time, search for shields or ammo upgrade = IMPROVE strategy
-
-        // Check if the current action is finished
-        m_timeInCurrentAction += Time.deltaTime;
-        bool isTargetTimePast = m_timeInCurrentAction > m_targetTimeInCurrentAction;
-        bool isLookingForBoxAndItWasTaken = m_currentState == BehaviorState.BS_FIND_BOX && m_actions.IsBoxTypeAndPosAvailable(m_boxLookingFor_type, m_boxLookingFor_pos) == false;
-       
-        // Time to reset and change state ?
-        if (isTargetTimePast || isLookingForBoxAndItWasTaken)
-        {
-            // Choose a new target action and time
-            m_targetTimeInCurrentAction = Random.Range(m_minTimeToContinueSameAction, m_maxTimeToContinueSameAction);
-            m_timeInCurrentAction = 0.0f;
-            m_currentState = BehaviorState.BS_IDLE;
-            m_boxLookingFor_type = BoxType.BOXTYPE_NUMS;
-            m_boxLookingFor_pos = AIBehaviorActions.s_invalidPos;
-        }
-
-        // Nothing changed continue using the same action
-        if (m_currentState != BehaviorState.BS_IDLE)
-            return;
-
-        // TODO: maybe score each item and choose the highest score ? but how to score them ?
-        // Currently it is a random priority thing
-
-        // Step 1: Do we need a life box ?
-        int numLivesThreshold = Random.Range(1, Mathf.CeilToInt(m_tankHealth.m_InitialNumLives * 0.5f));
-        float healthPercentThreshold = Random.Range(0.0f, 1.0f);
-        if (m_tankHealth.GetRemainingHealths() <= numLivesThreshold &&
-                m_tankHealth.GetRemainingLifePercent() < healthPercentThreshold)
-        {
-            Vector3 closestHPToMe = m_actions.FindClosestBoxPosFromPos(BoxType.BOXTYPE_HEALTH, thisObjectPos);
-            if (closestHPToMe != AIBehaviorActions.s_invalidPos)
-            {
-                m_currentState = BehaviorState.BS_FIND_BOX;
-                m_boxLookingFor_type = BoxType.BOXTYPE_HEALTH;
-                m_boxLookingFor_pos = closestHPToMe;
-            }
-        }
-
-        // Step 2: Do we need ammo ?
-        if (m_currentState == BehaviorState.BS_IDLE)
-        {
-            float currentAmmoPercent = m_tankShooting.GetCurrentAmmoPercent();
-            float ammoThrehsold = Random.Range(0.1f, 0.3f);
-            if (currentAmmoPercent < ammoThrehsold)
-            {
-                Vector3 closestAmmoToMe = m_actions.FindClosestBoxPosFromPos(BoxType.BOXTYPE_AMMO, thisObjectPos);
-                if (closestAmmoToMe != AIBehaviorActions.s_invalidPos)
-                {
-                    m_currentState = BehaviorState.BS_FIND_BOX;
-                    m_boxLookingFor_type = BoxType.BOXTYPE_AMMO;
-                    m_boxLookingFor_pos = closestAmmoToMe;
-                }
-            }
-        }
-
-        // Step 3: if we don't need anything, choose whatever you want with equal probability 
-        if (m_currentState == BehaviorState.BS_IDLE)
-        {
-            float rndImprove = Random.Range(0.0f, 1.0f);
-
-            // Improve status ? (like shield or weapon)
-            if (rndImprove < 1.0f)  //0.3f)
-            {
-                // Choose an improvement box
-                BoxType[] improvementTypes = { BoxType.BOXTYPE_WEAPONUPGRADE, BoxType.BOXTYPE_SHIELD };
-                int rndBox = Random.Range(0, improvementTypes.Length);
-                BoxType boxTryingToLookAfter = improvementTypes[rndBox];
-
-                Vector3 closestImproveBoxToMe = m_actions.FindClosestBoxPosFromPos(boxTryingToLookAfter, thisObjectPos);
-                if (closestImproveBoxToMe != AIBehaviorActions.s_invalidPos)
-                {
-                    m_currentState          = BehaviorState.BS_FIND_BOX;
-                    m_boxLookingFor_type    = boxTryingToLookAfter;
-                    m_boxLookingFor_pos     = closestImproveBoxToMe;
-                }
-            }
-
-            if (m_currentState == BehaviorState.BS_IDLE) // Either ATTACK or DEFEND
-            {
-                BehaviorState[] states = { BehaviorState.BS_ATTACK, BehaviorState.BS_DEFEND };
-                int rndState = Random.Range(0, states.Length);
-                m_currentState = states[rndState];
-            }
-        }
-    }
-
-    void ExecuteCurrentState()
-    {
-        Transform thisTankTransform = gameObject.transform;
-        Debug.Assert(m_currentState != BehaviorState.BS_IDLE);
-
-        bool shouldFire = false;
-        //if (m_currentState == BehaviorState.BS_ATTACK || m_currentState == BehaviorState.BS_DEFEND)
-        {
-            // Step1: Find the closest target that is within shooting range
-            TankManager[] tanks = m_globalAIBlackBox.m_TanksRef;
-            Transform closestTankTransform_visible = null;  // Stores the transform of the closest visible tank and any tank. By visible we mean shootable
-            Transform closestTankTransform_any = null;
-            float closestDistanceSqr_visible = Mathf.Infinity;
-            float closestDistanceSqr_any = Mathf.Infinity;
-            for (int i = 0; i < tanks.Length; i++)
-            {
-                // Is this not alive
-                if (tanks[i].IsAlive() == false)
-                    continue;
-
-                // THis is me ? 
-                if (tanks[i].m_Instance.gameObject == gameObject)
-                    continue;
-
-                GameObject otherTank = tanks[i].m_Instance.gameObject;
-                Transform otherTankTransform = otherTank.transform;
-
-                // If this tank is closer and it is visible from a ray cast perspective
-                // And if within shooting range
-                float distanceToOtherTankSqr = (otherTankTransform.position - thisTankTransform.position).sqrMagnitude;
-                if ((distanceToOtherTankSqr < closestDistanceSqr_visible &&
-                     distanceToOtherTankSqr < ShellExplosion.m_MaxDistanceTravelledSqr
-                    ) &&
-                    IsEnemyTankVisible(otherTankTransform, Mathf.Sqrt(distanceToOtherTankSqr))
-                    )
-
-                {
-                    closestDistanceSqr_visible = distanceToOtherTankSqr;
-                    closestTankTransform_visible = otherTankTransform;
-                }
-
-                if (distanceToOtherTankSqr < closestDistanceSqr_any)
-                {
-                    closestDistanceSqr_any = distanceToOtherTankSqr;
-                    closestTankTransform_any = otherTankTransform;
-                }
-            }
-
-            Transform closestTankTransform = null;
-            if (closestTankTransform_visible != null)
-            {
-                closestTankTransform = closestTankTransform_visible;
-                shouldFire = true;
-            }
-            else
-            {
-                closestTankTransform = closestTankTransform_any;
-                shouldFire = false;
-            }
-
-            if (closestTankTransform == null)
-                return;
-
-            // Step 2: if there is any thank within the range rotate and shoot it
-            // If visible, then fire !
-            if (shouldFire)
-            {
-                m_actions.Fire();
-            }
-            else if (m_currentState == BehaviorState.BS_ATTACK) // IF in attack state => Move to it !
-            {
-                m_actions.MoveToPosition(closestTankTransform.position);
-
-                if (shouldFire)
-                {
-                    m_actions.TurnToPosition(closestTankTransform.position);
-                }
-            }
-            else if (m_currentState == BehaviorState.BS_DEFEND) // IF in defending, take cover and rotate / wait for oponent
-            {
-                // TODO: take cover
-                m_actions.TurnToPosition(closestTankTransform.position);
-            }
-            else if (m_currentState == BehaviorState.BS_FIND_BOX)
-            {
-                // Just move to position here
-                // However there are many things to take into account here like what if someone is attacking us etc.
-                Debug.Assert(m_boxLookingFor_type != BoxType.BOXTYPE_NUMS && m_boxLookingFor_pos != AIBehaviorActions.s_invalidPos);
-                Debug.DrawRay(thisTankTransform.position, m_boxLookingFor_pos - thisTankTransform.position);
-                m_actions.MoveToPosition(m_boxLookingFor_pos);
-
-                if (shouldFire)
-                {
-                    m_actions.TurnToPosition(closestTankTransform.position);
-                }
-            }
-            else
-            {
-                Debug.Assert(false);
-            }
-        }
-
-        if (m_tankUI != null)
-        {
-            m_tankUI.setDebugText(System.String.Format("Id: {0} S: {1} F: {2}", m_id, m_currentState.ToString(), shouldFire ? 1 : 0));
-        }
-    }
+    public void onSetupFinished() { m_isSetupFinished = true; }
 
     // Update is called once per frame
     void Update()
     {
-        m_debugInfo.Reset();
-
-        if (!enabled)
+        if (!enabled || !m_isSetupFinished)
             return;
 
         FillLocalBlackBoard();
 
-        CheckCurrentState();
-        ExecuteCurrentState();
-    }
-
-    private bool IsEnemyTankVisible(Transform otherTankTransform, float maxDistance)
-    {
-        bool isOtherTankVisibleFromThis = false;
-
-            RaycastHit hit;
-            Ray ray = default(Ray);
-            ray.origin = m_fireTransform.position;
-            ray.direction = transform.forward;
-            int layerMask = ~0;
-            if (Physics.Raycast(ray, out hit, maxDistance + 2.0f, layerMask))
-            {
-                bool isEnemyMask = ((m_EnemyLayerMask & (1 << hit.transform.gameObject.layer))) != 0;
-                bool isTargetTheCorrectTank = hit.transform == otherTankTransform;
-
-                isOtherTankVisibleFromThis = isEnemyMask && isTargetTheCorrectTank;
-                if (EnableDebugging)
-                {
-                        m_debugInfo.lastRayHit = hit;
-                        m_debugInfo.lastUsedRay = ray;
-
-                        m_debugInfo.lastRayHitTank = isOtherTankVisibleFromThis;
-                        }
-            }
-
-        return isOtherTankVisibleFromThis;
-
+        Execute();
     }
 
     private void OnDrawGizmos()
     {
-        if (!EnableDebugging)
-            return;
-
-        if (m_debugInfo.lastRayHit.transform == null)
-        {
-            Gizmos.color = Color.white;
-            Gizmos.DrawRay(m_debugInfo.lastUsedRay);
-        }
-        else
-        {
-            Gizmos.color = m_debugInfo.lastRayHitTank ? Color.red : Color.green;
-            Gizmos.DrawLine(m_debugInfo.lastUsedRay.origin, m_debugInfo.lastRayHit.point);
-        }
+    
     }
-
-    AIBehaviorActions m_Actions;
 }
 
 
 /// <summary>
-///  These are the set of actions that the agent can do in general regardless of the behavior
+///  These are the set of generic actions and query that the agent can do in general regardless of the behavior
 ///  The purpose of this is to simplify the client code (the one implementing behaviors in this case)
+///  Also it provide a set of queries 
 /// </summary>
 public class AIBehaviorActions
 {
-    public AIBehaviorActions(AIBehavior baseObj) { m_base = baseObj; }
-    private AIBehavior m_base;
+    public AIBehaviorActions(AIBehavior baseObj)
+    {
+        m_base = baseObj;
 
-    static public Vector3 s_invalidPos = new Vector3(-float.MaxValue, -float.MaxValue, -float.MaxValue);
+        GameObject mainObject = GameObject.Find("GameManager");
+        GameManager gameManager = mainObject.GetComponent<GameManager>();
+        int numTotalTanks = gameManager.m_AiTanks.Length + gameManager.m_HumanTanks.Length;
+        BoxesSpawnScript boxesSpawnManager = mainObject.GetComponent<BoxesSpawnScript>();
+        
+
+        m_tempSortedBoxes = new IndexValuePosPair[(int)boxesSpawnManager.MaxNumberOfBoxesPerType];
+        for (int i = 0; i < (int)boxesSpawnManager.MaxNumberOfBoxesPerType; i++)
+        {
+            m_tempSortedBoxes[i] = new IndexValuePosPair();
+        }
+
+        m_tempSortedOpponentsToBox = new IndexValuePosPair[numTotalTanks];
+        for (int i = 0; i < numTotalTanks; i++)
+        {
+            m_tempSortedOpponentsToBox[i] = new IndexValuePosPair();
+        }
+        
+        m_tempSortedBoxes_count = m_tempSortedOpponents_count = 0;
+    }
+
+    private AIBehavior m_base;
 
     // Fire in the forward direction
     public void Fire()
@@ -410,9 +181,9 @@ public class AIBehaviorActions
     // Finds the closest box of a given type from a source position
     public Vector3 FindClosestBoxPosFromPos(BoxType boxType, Vector3 sourcePos)
     {
-        List<Vector3> boxPositions = m_base.m_globalAIBlackBox.m_boxPositionsByType[boxType];
+        ArrayList boxPositions = m_base.m_globalAIBlackBox.m_boxPositionsByType[boxType];
         float closestDist = float.MaxValue;
-        Vector3 closestPos = s_invalidPos;
+        Vector3 closestPos = UtilsGeneral.INVALID_POS;
         foreach (Vector3 pos in boxPositions)
         {
             float sqrDistToThis = (pos - sourcePos).sqrMagnitude;
@@ -430,7 +201,7 @@ public class AIBehaviorActions
     // TODO: this is not optimal a listener system should be used here 
     public bool IsBoxTypeAndPosAvailable(BoxType boxType, Vector3 knownBoxPos)
     {
-        List<Vector3> boxPositions = m_base.m_globalAIBlackBox.m_boxPositionsByType[boxType];
+        ArrayList boxPositions = m_base.m_globalAIBlackBox.m_boxPositionsByType[boxType];
         foreach (Vector3 pos in boxPositions)
         {
             if ((pos - knownBoxPos).sqrMagnitude < Mathf.Epsilon)
@@ -452,13 +223,255 @@ public class AIBehaviorActions
         Vector3 callerTankPos = m_base.gameObject.transform.position;
         Vector3 closestBoxPos = FindClosestBoxPosFromPos(boxType, callerTankPos);
 
-        if (closestBoxPos == s_invalidPos)
+        if (closestBoxPos == UtilsGeneral.INVALID_POS)
             return false;
 
         // TODO: check other enemyies maybe they follow the path to this box or are very close to it.
         // A lot of parameters to vary and learn here
         MoveToPosition(closestBoxPos);
         return true;
+    }
+
+    // Checks if a given enemy tank is visible from a source position and direction.
+    public bool IsEnemyTankInShootingDirection(Transform otherTankTransform, float maxDistance)
+    {
+        bool isOtherTankVisibleFromThis = false;
+
+        RaycastHit hit;
+        Ray ray         = default(Ray);
+        ray.origin      = m_base.m_fireTransform.position; 
+        ray.direction   = m_base.m_fireTransform.forward; 
+        int layerMask   = ~0;
+        if (Physics.Raycast(ray, out hit, maxDistance + 2.0f, layerMask))
+        {
+            bool isEnemyMask                            = ((m_base.m_EnemyLayerMask & (1 << hit.transform.gameObject.layer))) != 0;
+            bool isTargetTheCorrectTank                 = hit.transform == otherTankTransform;
+
+            isOtherTankVisibleFromThis                  = isEnemyMask && isTargetTheCorrectTank;
+
+            // Complete some debug info
+            m_base.m_iminentActions.lastShootRayHit     = hit;
+            m_base.m_iminentActions.lastUsedShootRay    = ray;
+            m_base.m_iminentActions.lastShootRayHitTank = isOtherTankVisibleFromThis;
+        }
+
+        return isOtherTankVisibleFromThis;
+    }
+
+    // Gestimated time to get from a source to a fixed target - fast version, no pathfinding
+    public float GetEstimatedTimeSourceToStaticTarget_Fast(Vector3 src, Vector3 dest)
+    {
+        float dist = (dest - src).magnitude;
+        return (dist / TankMovement.m_Speed);
+    }
+
+    // Gestimated time to get from a source to a fixed target - exact version, using pathfinding data + corners slowdown etc
+    public float GetEstimatedTimeSourceToStaticTarget_Exact(Vector3 src, Vector3 dest)
+    {
+        NavMeshPath path = new NavMeshPath();
+
+        // If no path found ?
+        if (!NavMesh.CalculatePath(src, dest, NavMesh.AllAreas, path))
+        {
+            return Mathf.Infinity;
+        }
+
+        // TODO: very simplistic, but we should estimate better because speed decreases around corners
+        float totalDist = 0;
+        for (int i = 0; i < path.corners.Length - 1; i++)
+        {
+            totalDist += (path.corners[i + 1] - path.corners[i]).magnitude;
+        }
+
+        return (totalDist / TankMovement.m_Speed);
+    }
+
+
+    class IndexValuePosPair
+    {
+        public int index;
+        public float value;
+        public Vector3 pos;
+
+    };
+    
+    class IndexValuePairLowestComparer : IComparer<IndexValuePosPair>
+    {
+        public int Compare(IndexValuePosPair x, IndexValuePosPair y)
+        {
+            // Compare x and y in reverse order. If one is invalid is put to the end of the sorted array always
+            if (x.index == UtilsGeneral.INVALID_INDEX)
+            {
+                if (y.index == UtilsGeneral.INVALID_INDEX)
+                    return 0;
+                else return 1;
+            }
+            else
+            {
+                if (y.index == UtilsGeneral.INVALID_INDEX)
+                    return -1;
+                else
+                {
+                    // Both values are valid
+                    return x.value < y.value ? -1 : (x.value > y.value ? 1 : 0);
+                }
+            }
+            
+        }
+    }
+
+    // These are constants and preallocated arrays for computing various queries for box finding
+    const int m_param_BoxFind_closestOpponentsLookingFor = 3; 
+    const int m_param_BoxFind_closestBoxNumbersLookingFor = 3;
+    const float m_param_alphaTime = 0.75f; // How important is the time ratio
+    const float m_param_angleX1 = 30, m_param_angleX2 = 180, m_param_angleY1 = 0.4f, m_param_angleY2 = 0.0f; // Interpolation direction_to_box inputs (angles) and probability output. Reflects belief of agent going to the target with his current direction
+    IndexValuePairLowestComparer m_indexValuePairComparer = new IndexValuePairLowestComparer();
+    IndexValuePosPair[] m_tempSortedBoxes;
+    IndexValuePosPair[] m_tempSortedOpponentsToBox;
+    int m_tempSortedBoxes_count = 0;
+    int m_tempSortedOpponents_count = 0;
+
+
+    // Returns false if no compatible box was found.
+    // Otherwise, it return the best rated box pos and score in the last two params
+    public bool FindEasiestBoxOfType(BoxType testBoxType, GlobalAIBlackBox globalBlackboard, out Vector3 easiestBoxPos, out float easiestBoxProbability)
+    {
+        // Inputs: - get closest K participants to the box
+        //         - get closest M boxes of the types looking for
+        // Outputs: - compute my probability for each of the M boxes then select the highest rated one and return it
+
+        // For faster version: use Max-heaps and get complexity O((K+M)*logN)
+
+        easiestBoxPos           = UtilsGeneral.INVALID_POS;
+        easiestBoxProbability   = -1.0f;
+        Vector3 thisTankPos     = m_base.transform.position;
+
+        // Get the list of box positions and retain the top K among them
+        ArrayList listOfBoxPositions = globalBlackboard.m_boxPositionsByType[testBoxType];
+        m_tempSortedBoxes_count = 0;
+        for (int i = 0; i < listOfBoxPositions.Count; i++)
+        {
+            Vector3 thisBoxPos = ((Vector3)listOfBoxPositions[i]);
+            m_tempSortedBoxes[i].index = i;
+            m_tempSortedBoxes[i].value = GetEstimatedTimeSourceToStaticTarget_Fast(thisBoxPos, thisTankPos);// (thisBoxPos - m_base.transform.position).magnitude;
+            m_tempSortedBoxes[i].pos = thisBoxPos;
+            m_tempSortedBoxes_count++;
+        }
+
+        System.Array.Sort(m_tempSortedBoxes, 0, m_tempSortedBoxes_count, m_indexValuePairComparer);
+
+        int bestBoxIdx       = UtilsGeneral.INVALID_INDEX;
+        float bestBoxScore    = UtilsGeneral.MAX_SCORE_VALUE;
+
+        // Take the sorted list of closest boxes (first K)
+        for (int boxIdx = 0; boxIdx < m_param_BoxFind_closestBoxNumbersLookingFor; boxIdx++)
+        {
+            if (boxIdx >= m_tempSortedBoxes_count)
+            {
+                break;
+            }
+
+            Vector3 thisBoxPos              = m_tempSortedBoxes[boxIdx].pos;
+            float ourAgentTimeToThisBox     = m_tempSortedBoxes[boxIdx].value;
+
+            // Take the sorted list of agents closest to that box (first M)
+            TankManager[] tanks = globalBlackboard.m_TanksRef;
+            {
+                m_tempSortedOpponents_count = 0;
+                
+                for (int oppIdx = 0; oppIdx < tanks.Length; oppIdx++)
+                {
+                    // Init with an invalid value every entry
+                    m_tempSortedOpponentsToBox[oppIdx].value = UtilsGeneral.MAX_SCORE_VALUE; // max because it's distance, and we sort ascending
+                    m_tempSortedOpponentsToBox[oppIdx].index = UtilsGeneral.INVALID_INDEX;
+
+                    TankManager tankIter = tanks[oppIdx];
+                    if (tankIter.m_Instance == m_base.gameObject || tankIter.IsAlive() == false)
+                    {
+                        continue;
+                    }
+
+                    Vector3 tankIterPos = tankIter.m_Instance.transform.position;
+
+                    m_tempSortedOpponentsToBox[m_tempSortedOpponents_count].index = oppIdx;
+                    m_tempSortedOpponentsToBox[m_tempSortedOpponents_count].value = GetEstimatedTimeSourceToStaticTarget_Fast(tankIterPos, thisBoxPos);//Vector3.Distance(tankIterPos, thisTankPos);
+                    m_tempSortedOpponentsToBox[m_tempSortedOpponents_count].pos = tankIterPos;
+                    m_tempSortedOpponents_count++;
+                }
+
+                System.Array.Sort(m_tempSortedOpponentsToBox, 0, m_tempSortedOpponents_count, m_indexValuePairComparer);
+            }
+
+            // Now, for this box, check our probability against each of the M agents
+            // We'll keep the relative score in each m_tempSortedOpponentsToBox location
+            for (int oppIdx = 0; oppIdx < m_param_BoxFind_closestOpponentsLookingFor; oppIdx++)
+            {
+                if (oppIdx >= m_tempSortedOpponents_count)
+                {
+                    break;
+                }
+
+                // Compute probability / score here and put it in value
+                // Compare the angle between (opponent to boxn VS  current opponent avg dir)
+
+                // First, compute the  probability that the opponent has to get to the box by looking at his direction and estimated time to target
+                Vector3 thisOpponentPos                     = m_tempSortedOpponentsToBox[oppIdx].pos;
+                int thisOpponentGlobalIndex                 = m_tempSortedOpponentsToBox[oppIdx].index;
+                Vector3 opponentToBox                       = thisBoxPos - thisOpponentPos;
+                Vector3 thisOpponentAvgVel                  = tanks[thisOpponentGlobalIndex].m_Movement.m_movingAvgVel;
+                float angleBetweenDirs                      = Vector3.Angle(thisOpponentAvgVel, opponentToBox);
+                float intentionProbability                  = UtilsGeneral.lerp(angleBetweenDirs, m_param_angleX1, m_param_angleX2, m_param_angleY1, m_param_angleY2);
+
+
+                // Compute the opponent probability of this opponent relative THIS TANK 
+                float opponentTimeToThisBox                 = m_tempSortedOpponentsToBox[oppIdx].value;
+                float timeToGetProbability_raw              = (ourAgentTimeToThisBox / (opponentTimeToThisBox + Mathf.Epsilon));
+                float timeToGetProbability_clamped          = Mathf.Clamp(timeToGetProbability_raw, 0.0f, 1.0f);
+
+                float totalOpponentProbability               = timeToGetProbability_clamped * m_param_alphaTime + (1.0f - m_param_alphaTime) * intentionProbability;
+
+                // This contains the opponent probability relative to THIS TANK
+                m_tempSortedOpponentsToBox[oppIdx].value    = Mathf.Clamp(totalOpponentProbability, 0.0f, 1.0f);
+            }
+
+            // Now select the best positioned opponent to this box (the one with the highest probability relative to THIS TANK)
+            // the lowest for THIS TANK
+            int bestOppIdxToThisBox                         = -1;
+            float bestOppValueToThisBox                     = UtilsGeneral.MIN_SCORE_VALUE;
+            for (int oppIdx = 0; oppIdx < m_param_BoxFind_closestOpponentsLookingFor; oppIdx++)
+            {
+                if (oppIdx >= m_tempSortedOpponents_count)
+                {
+                    break;
+                }
+
+                if (m_tempSortedOpponentsToBox[oppIdx].value > bestOppValueToThisBox)
+                {
+                    bestOppValueToThisBox = m_tempSortedOpponentsToBox[oppIdx].value;
+                    bestOppIdxToThisBox = m_tempSortedOpponentsToBox[oppIdx].index;
+                }
+            }
+
+            // Finally, compare if this global box optimal (probability) is worser than this box opponent relative score
+            // We have to select the box with minimum probability for our opponents relative to THIS TANK
+            if (bestBoxScore > bestOppValueToThisBox)
+            {
+                bestBoxScore = bestOppValueToThisBox;
+                bestBoxIdx = m_tempSortedBoxes[boxIdx].index;
+            }
+        }
+
+        if (bestBoxIdx != UtilsGeneral.INVALID_INDEX)
+        {
+            // Now invert the probability because we are interested in THIS TANK not the one of opponents relative to our tank
+            easiestBoxProbability = Mathf.Clamp(1.0f - bestBoxScore, 0.0f, 1.0f);
+            easiestBoxPos = ((Vector3)listOfBoxPositions[bestBoxIdx]);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 };
 

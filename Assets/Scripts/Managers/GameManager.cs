@@ -26,12 +26,11 @@ public class GlobalAIBlackBox
     // Dynamic observations 
     public TankManager[] m_TanksRef;
 
-
     // Static observations - that don't change over time
     public Transform[] m_SpawnPoints;
     public float[] m_tempDistancesToSpawnPointsSqr; // Closest distance from any tank to each spawnpoint
 
-    public Dictionary<BoxType, List<Vector3>> m_boxPositionsByType = new Dictionary<BoxType, List<Vector3>>();
+    public Dictionary<BoxType, ArrayList> m_boxPositionsByType = new Dictionary<BoxType, ArrayList>();
 
     /////////// Helper functions ///////////
 
@@ -81,11 +80,37 @@ public class GlobalAIBlackBox
     }
 };
 
+// Store behavior state and functionality 
+// --------------------------------------------
+// Current 
+public enum AIBehaviorState
+{
+    BS_IDLE,
+    BS_DEFEND,
+    BS_ATTACK,
+    BS_FIND_BOX
+};
+
+
 // Informations about a local tank, private, i.e. accessible only to the tank binded to
 public class LocalAIBlackBoard
 {
     public float deltaTime; // Time since last frame for this AI instance update
+
+    public AIBehaviorState m_currentState   = AIBehaviorState.BS_IDLE; // Current high-level state of the agent
+    public BoxType m_boxLookingFor_type     = BoxType.BOXTYPE_NUMS; // Only valid if state is BS_FIND_BOX
+    public Vector3 m_boxLookingFor_pos      = UtilsGeneral.INVALID_POS; // Same as above
+    public float m_timeInCurrentAction      = 0.0f; // The time spent in the current action chosen
 }
+
+public class TankSpawnConfigParams
+{
+    public Vector3 pos = Vector3.zero;
+    public Quaternion rotation = Quaternion.identity;
+    public Color color = Color.white;
+    public GlobalAIBlackBox globalAIBlackbox = null;
+    public bool isAI = false;
+};
 
 public class GameManager : MonoBehaviour
 {
@@ -126,7 +151,13 @@ public class GameManager : MonoBehaviour
     private TankManager m_GameWinner;           // Reference to the winner of the game.  Used to make an announcement of who won.
     Transform[] m_spawnpoints;                 // The spawnpoints authored on the map
 
+    [HideInInspector]
+    public AITanksSpawnConfig[] m_forcedSpawnPointsOrder;  // The spawned positions order imposed by somewhere else. Can be used for custom scenarios or for testing purposes
+    [HideInInspector]
+    public bool m_useForcedSpawnpointsOrder = false;
+
     BoxesSpawnScript m_spawnManager;            // Ref to the spawn manager
+    AIDebugHelper m_AIDebugHelper = null;
 
 
     GlobalAIBlackBox m_AIGlobalBlackBox = new GlobalAIBlackBox();
@@ -172,7 +203,7 @@ public class GameManager : MonoBehaviour
         {
             BoxType boxType = (BoxType)i;
             GameObject[] boxObjects = GameObject.FindGameObjectsWithTag(m_spawnManager.GetTagForBoxType(boxType));
-            List<Vector3> listOfBoxPos = new List<Vector3>(boxObjects.Length);
+            ArrayList listOfBoxPos = new ArrayList(boxObjects.Length);
             foreach (GameObject obj in boxObjects)
             {
                 listOfBoxPos.Add(obj.transform.position);
@@ -202,9 +233,34 @@ public class GameManager : MonoBehaviour
         m_tempspawnPointIndexIter = 0;
     }
 
-    private Transform SpawnPointIteration_next()
+    private void SpawnPointIteration_next(out Vector3 outPos, out Quaternion outRotation, out Vector3 outInitialAvgVel)
     {
-        return m_spawnpoints[m_tempspawnPointIndexIter++].transform;       
+        outPos = Vector3.zero;
+        outRotation = Quaternion.identity;
+        outInitialAvgVel = Vector3.zero;
+
+        if (m_useForcedSpawnpointsOrder == false)
+        {
+            if (m_spawnpoints.Length <= m_tempspawnPointIndexIter)
+            {
+                Debug.Assert(false, "Not enough spawn points for requested scenario !");
+                return;
+            }
+
+            outPos              = m_spawnpoints[m_tempspawnPointIndexIter].transform.position;
+            outRotation         = m_spawnpoints[m_tempspawnPointIndexIter].transform.rotation;
+            outInitialAvgVel    = Vector3.zero;
+        }
+        else
+        {
+            outPos              = m_forcedSpawnPointsOrder[m_tempspawnPointIndexIter].pos;
+            outRotation         = Quaternion.LookRotation(m_forcedSpawnPointsOrder[m_tempspawnPointIndexIter].avgVel, Vector3.up);
+            outInitialAvgVel    = m_forcedSpawnPointsOrder[m_tempspawnPointIndexIter].avgVel;
+        }
+
+        m_tempspawnPointIndexIter++;
+
+        return ;       
     }
 
     private void SpawnAllTanks(bool isInitialSpawn)
@@ -226,16 +282,22 @@ public class GameManager : MonoBehaviour
 
         for (int i = 0; i <  m_AiTanks.Length + m_HumanTanks.Length; i++)
         {
-            Transform spawnPointInfo = SpawnPointIteration_next(); // Get A spawn point
+            // Take a tank from the pool
+            bool spawnAsHuman           = i >= m_AiTanks.Length;
+            m_Tanks[i]                  = spawnAsHuman ? m_HumanTanks[i - m_AiTanks.Length] : m_AiTanks[i];
 
-            bool spawnAsHuman = i >= m_AiTanks.Length;
-            m_Tanks[i] = spawnAsHuman ? m_HumanTanks[i - m_AiTanks.Length] : m_AiTanks[i];
-            m_Tanks[i].m_SpawnPoint = spawnPointInfo;
 
+            Vector3 pos;
+            Quaternion rotation;
+            Vector3 initialVel;
+            SpawnPointIteration_next(out pos, out rotation, out initialVel); // Get A spawn point
+            m_Tanks[i].m_SpawnPos = pos;
+            m_Tanks[i].m_SpawnRotation = rotation;
+            
             // If initial spawn, need to create the objects...
             if (isInitialSpawn)
             {
-                m_Tanks[i].m_Instance           = Instantiate(m_TankPrefab, spawnPointInfo.position, spawnPointInfo.rotation) as GameObject;
+                m_Tanks[i].m_Instance           = Instantiate(m_TankPrefab, pos, rotation) as GameObject;
                 m_Tanks[i].m_AIGlobalBlackBox   = m_AIGlobalBlackBox;
 
                 int playerId = i;
@@ -252,7 +314,12 @@ public class GameManager : MonoBehaviour
 
                 m_Tanks[i].Setup(EnableTanksTextUI);
             }
-        }        
+
+            m_Tanks[i].SetInitialVelocity(initialVel);
+        }
+
+        m_AIDebugHelper = gameObject.GetComponent<AIDebugHelper>();
+        m_AIDebugHelper.Setup(m_Tanks);
     }
 
 
@@ -297,7 +364,7 @@ public class GameManager : MonoBehaviour
             // Note that this coroutine doesn't yield.  This means that the current version of the GameLoop will end.
             StartCoroutine(GameLoop());
         }
-    }
+    } 
 
 
     private IEnumerator RoundStarting()

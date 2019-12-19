@@ -84,8 +84,15 @@ public class TankUI
         // Project parent tank pos to 2d screen pos
         Vector3 screenPos = Camera.main.WorldToScreenPoint(m_parentGameObject.transform.position);
 
+
+        screenPos.y -= 27;
+        if (m_debugText.enabled)
+        {
+            m_debugText.transform.position = screenPos;
+        }
+
         // Set the num lives text and pos
-        screenPos.y -= 15;
+        screenPos.y += 15;
         m_numLifesText.transform.position = screenPos;
         int numLifes = m_parentTankManager.m_Health.GetCurrentNumLives(); // TODO: make this an observer and change text only when needed
         m_numLifesText.text = "L: " + numLifes;
@@ -109,11 +116,6 @@ public class TankUI
             m_weaponUpgradeText.transform.position = screenPos;
         }
 
-        screenPos.y += 12;
-        if (m_debugText.enabled)
-        {
-             m_debugText.transform.position = screenPos;
-        }
     }
 
     public void setDebugText(String s)

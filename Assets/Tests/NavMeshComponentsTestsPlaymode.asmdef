@@ -1,13 +1,16 @@
 {
     "name": "NavMeshComponentsTestsPlaymode",
     "references": [
-        "NavMeshComponents"
+        "NavMeshComponents",
+        "AllGameScriptsAsm"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
     ],
     "includePlatforms": [],
-    "excludePlatforms": [],
+    "excludePlatforms": [
+        "LinuxStandalone32"
+    ],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],

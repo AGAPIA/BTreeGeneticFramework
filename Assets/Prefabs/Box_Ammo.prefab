@@ -181,7 +181,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7344553210381058941}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.5131764, y: 0.26219088, z: -8.347929}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.003, y: 0.003, z: 0.003}
   m_Children:
   - {fileID: 2101114283363102018}
@@ -213,7 +213,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7344553210381058941}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2d754c8d89bceec469f9431cfef21499, type: 3}
+  m_Script: {fileID: 11500000, guid: 7757804ef9d2d4217953d6ad9565493d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_TankMask:

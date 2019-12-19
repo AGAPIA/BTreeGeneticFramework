@@ -93,7 +93,7 @@ public class ShellExplosion : MonoBehaviour
             m_ExplosionAudio.Play();
 
             // Once the particles have finished, destroy the gameobject they are on.
-            Destroy(m_ExplosionParticles.gameObject, m_ExplosionParticles.duration);
+            Destroy(m_ExplosionParticles.gameObject, m_ExplosionParticles.main.duration);
 
             // Destroy the shell.
             Destroy(gameObject);
