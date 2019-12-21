@@ -125,11 +125,19 @@ public class AIDebugHelper : MonoBehaviour
                 if (utilityBehavior)
                 {
                     BoxTypeEval eval = utilityBehavior.GetBoxTypeEval(BoxType.BOXTYPE_HEALTH);
-                    string evalText = System.String.Format("S:{0} [N:{1}][P:{2}]\n", eval.score, eval.needForBox, eval.probabilityToGetBox);
-                    textToDisplay += evalText;
+                    if (eval != null)
+                    {
+                        string evalText = System.String.Format("S:{0} [N:{1}][P:{2}]\n", eval.score, eval.needForBox, eval.probabilityToGetBox);
+                        textToDisplay += evalText;
 
-                    Gizmos.color = Color.green;
-                    Gizmos.DrawLine(thisAgentPos, eval.pos);
+                        Gizmos.color = Color.green;
+                        Gizmos.DrawLine(thisAgentPos, eval.pos);
+                    }
+                    else
+                    {
+                        string evalText = System.String.Format("No HEALTH eval available");
+                        textToDisplay += evalText;
+                    }
                 }
             }
 

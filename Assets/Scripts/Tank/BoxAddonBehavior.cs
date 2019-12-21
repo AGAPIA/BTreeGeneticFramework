@@ -55,7 +55,7 @@ public class BoxAddonBehavior : MonoBehaviour
                 m_upgrades[i].Reset();
             }
         }
-   }
+    }
 
     // Update is called once per frame
     void Update()
@@ -101,7 +101,7 @@ public class BoxAddonBehavior : MonoBehaviour
         }
     }
 
-    public void ActivateUpgrade(BoxType boxType, int id)
+    public void ActivateUpgrade(BoxType boxType)
     {
         if (boxType == BoxType.BOXTYPE_SHIELD || boxType == BoxType.BOXTYPE_WEAPONUPGRADE)
         {
@@ -137,10 +137,10 @@ public class BoxAddonBehavior : MonoBehaviour
             {
                 m_ShootingComponent.MaximizeAmmo();
             }
-            else if (boxType == BoxType.BOXTYPE_LIFE)
+            /*else if (boxType == BoxType.BOXTYPE_LIFE)
             {
                 m_HealthComponent.AddLife();
-            }
+            }*/
             else
             {
                 Debug.Assert(false, "Uknown type of box type");

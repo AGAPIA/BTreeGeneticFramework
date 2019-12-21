@@ -233,34 +233,25 @@ public class GameManager : MonoBehaviour
         m_tempspawnPointIndexIter = 0;
     }
 
-    private void SpawnPointIteration_next(out Vector3 outPos, out Quaternion outRotation, out Vector3 outInitialAvgVel)
+    private void SpawnPointIteration_next(out AITanksSpawnConfig agentConfig)
     {
-        outPos = Vector3.zero;
-        outRotation = Quaternion.identity;
-        outInitialAvgVel = Vector3.zero;
-
         if (m_useForcedSpawnpointsOrder == false)
         {
             if (m_spawnpoints.Length <= m_tempspawnPointIndexIter)
             {
                 Debug.Assert(false, "Not enough spawn points for requested scenario !");
-                return;
             }
 
-            outPos              = m_spawnpoints[m_tempspawnPointIndexIter].transform.position;
-            outRotation         = m_spawnpoints[m_tempspawnPointIndexIter].transform.rotation;
-            outInitialAvgVel    = Vector3.zero;
+            agentConfig = new AITanksSpawnConfig(); // TODO: need to fix these allocations...
+            agentConfig.pos         = m_spawnpoints[m_tempspawnPointIndexIter].transform.position;
+            agentConfig.rotation    = m_spawnpoints[m_tempspawnPointIndexIter].transform.rotation;
         }
         else
         {
-            outPos              = m_forcedSpawnPointsOrder[m_tempspawnPointIndexIter].pos;
-            outRotation         = Quaternion.LookRotation(m_forcedSpawnPointsOrder[m_tempspawnPointIndexIter].avgVel, Vector3.up);
-            outInitialAvgVel    = m_forcedSpawnPointsOrder[m_tempspawnPointIndexIter].avgVel;
+            agentConfig             = m_forcedSpawnPointsOrder[m_tempspawnPointIndexIter];
         }
 
         m_tempspawnPointIndexIter++;
-
-        return ;       
     }
 
     private void SpawnAllTanks(bool isInitialSpawn)
@@ -286,18 +277,15 @@ public class GameManager : MonoBehaviour
             bool spawnAsHuman           = i >= m_AiTanks.Length;
             m_Tanks[i]                  = spawnAsHuman ? m_HumanTanks[i - m_AiTanks.Length] : m_AiTanks[i];
 
-
-            Vector3 pos;
-            Quaternion rotation;
-            Vector3 initialVel;
-            SpawnPointIteration_next(out pos, out rotation, out initialVel); // Get A spawn point
-            m_Tanks[i].m_SpawnPos = pos;
-            m_Tanks[i].m_SpawnRotation = rotation;
+            AITanksSpawnConfig agentConfig;
+            SpawnPointIteration_next(out agentConfig); // Get A spawn point
+            m_Tanks[i].m_SpawnPos       = agentConfig.pos;
+            m_Tanks[i].m_SpawnRotation  = agentConfig.rotation;
             
             // If initial spawn, need to create the objects...
             if (isInitialSpawn)
             {
-                m_Tanks[i].m_Instance           = Instantiate(m_TankPrefab, pos, rotation) as GameObject;
+                m_Tanks[i].m_Instance           = Instantiate(m_TankPrefab, agentConfig.pos, agentConfig.rotation) as GameObject;
                 m_Tanks[i].m_AIGlobalBlackBox   = m_AIGlobalBlackBox;
 
                 int playerId = i;
@@ -315,7 +303,7 @@ public class GameManager : MonoBehaviour
                 m_Tanks[i].Setup(EnableTanksTextUI);
             }
 
-            m_Tanks[i].SetInitialVelocity(initialVel);
+            m_Tanks[i].SetSpawnParams(agentConfig);
         }
 
         m_AIDebugHelper = gameObject.GetComponent<AIDebugHelper>();

@@ -105,6 +105,12 @@ public class TankHealth : MonoBehaviour
     public int GetRemainingHealths() { return m_CurrentRemainingLives; }
     public float GetRemainingLifePercent() { return m_CurrentHealth / m_StartingHealth; }
 
+    public void SetRemainingLifePercent(float life)
+    {
+        Debug.AssertFormat(0.0f <= life && life <= 1.0f, "life given is not between 0-1, %d", life);
+        m_CurrentHealth = life * m_StartingHealth;
+    }
+
     private void OnDeath()
     {
         //Step 1 - play the effects

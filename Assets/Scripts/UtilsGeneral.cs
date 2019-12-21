@@ -2,11 +2,16 @@
 using UnityEngine;
 
 
-// Spawning time with desired position and average velocities for certain scenarios
-public struct AITanksSpawnConfig
+// Spawning time with desired values for certain scenarios
+public class AITanksSpawnConfig
 {
-    public Vector3 pos;
-    public Vector3 avgVel;
+    public Vector3 pos = Vector3.zero;             // Position of the tank
+    public Vector3 avgVel = Vector3.zero;          // Average velocity     
+    public float desiredHealthPercent = 1.0f; // How much health and ammo should tank have 
+    public float  desiredAmmoPercent = 1.0f;
+    public bool forceShield = false; // If tank has shield or not
+    public bool hasWeaponUpgrade = false;
+    public Quaternion rotation = Quaternion.identity;
 };
 
 public class UtilsGeneral

@@ -160,4 +160,10 @@ public class TankShooting : MonoBehaviour
     {
         return (float)m_currentAmmo / m_maxAmmo;
     }
+
+    public void SetCurrentAmmoPercent(float ammoParcent)
+    {
+        Debug.AssertFormat(0.0f <= ammoParcent && ammoParcent <= 1.0f, "ammoParcent given is not between 0-1, %d", ammoParcent);
+        m_currentAmmo = (int)(ammoParcent * m_maxAmmo);
+    }
 }

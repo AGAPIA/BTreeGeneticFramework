@@ -9,7 +9,7 @@ public enum BoxType
     BOXTYPE_SHIELD,
     BOXTYPE_WEAPONUPGRADE,
     BOXTYPE_HEALTH,
-    BOXTYPE_LIFE,
+    //BOXTYPE_LIFE,
     BOXTYPE_NUMS,
 };
 
@@ -21,7 +21,7 @@ public class BoxesSpawnScript : MonoBehaviour
         "Box_Shield",
         "Box_WeaponUpgrade",
         "Box_HP",
-        "Box_Life",
+        //"Box_Life",
     };
 
     public string GetTagForBoxType(BoxType type) { return BoxTypeTagStrings[(int)type]; }

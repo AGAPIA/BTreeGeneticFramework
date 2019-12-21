@@ -50,7 +50,7 @@ public class DataContainer : MonoBehaviour
             if (!targetBoxBehavior)
                 continue;
 
-            targetBoxBehavior.ActivateUpgrade(boxType, boxId);
+            targetBoxBehavior.ActivateUpgrade(boxType);
 
             // Notify the observer that this box object lifetime is over
             if (m_observer)

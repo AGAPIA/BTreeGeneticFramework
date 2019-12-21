@@ -32,11 +32,16 @@ namespace Tests
 
             // Setup the test sceneario: create the desired positions for the stuff on the map
             // This example: tank0 is closer to box but opposite dir, tank1 is very far (no chance) but is in the good dir
+            // Also, both tanks need health
+            int numAITanks = 2;
             Vector3 desiredBoxPos               = new Vector3(5, 0, -30);
             BoxType desiredBoxType              = BoxType.BOXTYPE_HEALTH;
             Vector3[] desiredAITanksPosition    = { new Vector3(1, 0, -20), new Vector3(-13, 0, -18) };
             Vector3[] desiredAITaksAvgVel       = { (desiredAITanksPosition[0] - desiredBoxPos), (desiredBoxPos - desiredAITanksPosition[1]) };
-            int numAITanks                      = 2;
+            float[] desiredHealthPercent        = { 0.5f, 0.5f };
+            bool[] desiredShield                = { false, false};
+            bool[] desiredWeaponUpgrade         = { false, false };
+            float[] desiredAmmoPercent          = { 1.0f, 1.0f};
 
             // Then setup tanks spawning
             AITanksSpawnConfig[] scenarioConfig             = new AITanksSpawnConfig[numAITanks];
@@ -44,8 +49,15 @@ namespace Tests
             
             for (int i = 0; i < numAITanks; i++)
             {
-                scenarioConfig[i].pos       = desiredAITanksPosition[i];
-                scenarioConfig[i].avgVel    = desiredAITaksAvgVel[i];
+                scenarioConfig[i]                           = new AITanksSpawnConfig();
+                scenarioConfig[i].pos                       = desiredAITanksPosition[i];
+                scenarioConfig[i].avgVel                    = desiredAITaksAvgVel[i];
+                scenarioConfig[i].rotation                  = Quaternion.LookRotation(scenarioConfig[i].avgVel, Vector3.up); // Must be always after avgVel !!!
+
+                scenarioConfig[i].desiredAmmoPercent        = desiredAmmoPercent[i];
+                scenarioConfig[i].desiredHealthPercent      = desiredHealthPercent[i];
+                scenarioConfig[i].forceShield               = desiredShield[i];
+                scenarioConfig[i].hasWeaponUpgrade          = desiredWeaponUpgrade[i];
             }
             gameManagerScript.m_forcedSpawnPointsOrder      = scenarioConfig;
 
@@ -66,7 +78,7 @@ namespace Tests
             }
 
 
-            yield return new WaitForSeconds(6.0f);
+            yield return new WaitForSeconds(10.0f);
             //
         }
     }

@@ -96,10 +96,24 @@ public class TankManager
         m_AI.onSetupFinished();
     }
 
-    public void SetInitialVelocity(Vector3 vel)
+    public void SetSpawnParams(AITanksSpawnConfig config)
     {
-        m_Movement.m_movingAvgVel = vel;
-        m_RigidBody.velocity = vel;
+        // Set forced params. Pos and rotation were already set here..
+        m_Movement.m_movingAvgVel   = config.avgVel;
+        m_RigidBody.velocity        = config.avgVel;
+
+        m_Health.SetRemainingLifePercent(config.desiredHealthPercent);
+        m_Shooting.SetCurrentAmmoPercent(config.desiredAmmoPercent);
+
+        if (config.forceShield)
+        {
+            m_Addons.ActivateUpgrade(BoxType.BOXTYPE_SHIELD);
+        }
+
+        if (config.hasWeaponUpgrade)
+        {
+            m_Addons.ActivateUpgrade(BoxType.BOXTYPE_WEAPONUPGRADE);
+        }
     }
 
    

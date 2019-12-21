@@ -821,7 +821,6 @@ MonoBehaviour:
   - {fileID: 290042410, guid: 7fff1faa6864958479d5e3499d21a2d8, type: 3}
   - {fileID: 1563827979, guid: 0fd8e7601b34cad49ab6fde4506f6ee8, type: 3}
   - {fileID: 9110293554552154419, guid: 763f5dc6e6cd84c198392cf712af7978, type: 3}
-  - {fileID: 3705237852028837332, guid: ddf3bab3724a545a894834cb413a163a, type: 3}
   m_parentForBoxes: {fileID: 3208821061810064394}
 --- !u!114 &7915435564672646791
 MonoBehaviour:

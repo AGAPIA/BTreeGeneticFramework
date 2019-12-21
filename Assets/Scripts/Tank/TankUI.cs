@@ -76,7 +76,7 @@ public class TankUI
 
     public void Update()
     {
-        if (!m_enabled)
+        if (!m_enabled || !Camera.current)
             return;
 
         CheckRefs();
@@ -115,7 +115,6 @@ public class TankUI
         {
             m_weaponUpgradeText.transform.position = screenPos;
         }
-
     }
 
     public void setDebugText(String s)

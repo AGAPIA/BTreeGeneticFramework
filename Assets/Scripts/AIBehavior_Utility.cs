@@ -31,6 +31,11 @@ public class AIBehavior_Utility : AIBehavior
     //------------------------
 
 
+    // 
+    [Tooltip("Score for IDLE action. If no better score is found by utility AI, idle will be selected")]
+    public static float BASE_IDLE_SCORE = 0.001f;
+
+
     public void DoScoreBoxUpgrades(out float score, out BoxType outBoxTypeToLookAfter, out Vector3 outBoxPosToLookAfter)
 	{
         score                   = 0.0f;
@@ -55,7 +60,7 @@ public class AIBehavior_Utility : AIBehavior
             float remainingCurrentLifePercent   = m_tankHealth.GetRemainingLifePercent();
 
             int numMaxLives = m_tankHealth.m_InitialNumLives;
-            float needForLife = 1.0f - (numMaxLives + 1.0f + (remainingCurrentLifePercent - 1.0f)) / (numMaxLives + 1);
+            float needForLife = Mathf.Max(1.0f - (numMaxLives + 1.0f + (remainingCurrentLifePercent - 1.0f)) / (numMaxLives + 1), 0.001f);
 
 
             BoxTypeEval evalHealth = m_evaluationByType[(int)BoxType.BOXTYPE_HEALTH];
@@ -135,6 +140,21 @@ public class AIBehavior_Utility : AIBehavior
             }
         }
         */
+
+        // Now choose he best box available by score
+        score = 0.0f;
+        outBoxTypeToLookAfter = BoxType.BOXTYPE_NUMS;
+        outBoxPosToLookAfter = UtilsGeneral.INVALID_POS;
+
+        for (int i = 0; i < (int)m_evaluationByType.Length; i++)
+        {
+            if (m_evaluationByType[i].score > score)
+            {
+                score                   = m_evaluationByType[i].score;
+                outBoxPosToLookAfter    = m_evaluationByType[i].pos;
+                outBoxTypeToLookAfter   = (BoxType)i;
+            }
+        }
     }
 
     // This executes the chosen action
@@ -249,14 +269,14 @@ public class AIBehavior_Utility : AIBehavior
         // --------------------------------------
         // First layer: DEFEND, ATTACK, LOOK for UPGRADE BOX
 
-        float bestScoreSoFar = 0.0f;
-        m_localAIBlackBox.m_currentState = AIBehaviorState.BS_IDLE;
+        float bestScoreSoFar                = AIBehavior_Utility.BASE_IDLE_SCORE;
+        
 
         // 1. Score box upgrade depending on need and success probability then give a score of this action and some context
         {
-            float scoreForBoxes = 0.0f;
-            BoxType boxTypeToLookAfter = BoxType.BOXTYPE_NUMS;
-            Vector3 boxPosToLookAfter = UtilsGeneral.INVALID_POS;
+            float scoreForBoxes             = 0.0f;
+            BoxType boxTypeToLookAfter      = BoxType.BOXTYPE_NUMS;
+            Vector3 boxPosToLookAfter       = UtilsGeneral.INVALID_POS;
             DoScoreBoxUpgrades(out scoreForBoxes, out boxTypeToLookAfter, out boxPosToLookAfter);
 
             if (scoreForBoxes > bestScoreSoFar)
@@ -276,6 +296,12 @@ public class AIBehavior_Utility : AIBehavior
         // 3. Score Attack
         {
 
+        }
+
+        // Default to idle if no good action to take. At least, conserve the energy
+        if (bestScoreSoFar <= AIBehavior_Utility.BASE_IDLE_SCORE)
+        {
+            m_localAIBlackBox.m_currentState = AIBehaviorState.BS_IDLE;
         }
     }
 
