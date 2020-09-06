@@ -87,6 +87,7 @@ public enum AIBehaviorState
 {
     BS_IDLE,
     BS_DEFEND,
+    BS_DEFEND_BY_COVER, // Go to a cover then defend
     BS_ATTACK,
     BS_FIND_BOX
 };
@@ -98,9 +99,17 @@ public class LocalAIBlackBoard
     public float deltaTime; // Time since last frame for this AI instance update
 
     public AIBehaviorState m_currentState   = AIBehaviorState.BS_IDLE; // Current high-level state of the agent
+    public AIBehaviorState m_prevState      = AIBehaviorState.BS_IDLE;
     public BoxType m_boxLookingFor_type     = BoxType.BOXTYPE_NUMS; // Only valid if state is BS_FIND_BOX
     public Vector3 m_boxLookingFor_pos      = UtilsGeneral.INVALID_POS; // Same as above
     public float m_timeInCurrentAction      = 0.0f; // The time spent in the current action chosen
+
+    public void setNewCurrentState(AIBehaviorState newState)
+    {
+        m_prevState = m_currentState;
+        m_currentState = newState;
+        m_timeInCurrentAction = 0.0f;
+    }
 }
 
 public class TankSpawnConfigParams

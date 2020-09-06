@@ -13,6 +13,39 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
+public class IndexValuePosPair
+{
+    public int index;
+    public float value;
+    public Vector3 pos;
+
+};
+
+public class IndexValuePairLowestComparer : IComparer<IndexValuePosPair>
+{
+    public int Compare(IndexValuePosPair x, IndexValuePosPair y)
+    {
+        // Compare x and y in reverse order. If one is invalid is put to the end of the sorted array always
+        if (x.index == UtilsGeneral.INVALID_INDEX)
+        {
+            if (y.index == UtilsGeneral.INVALID_INDEX)
+                return 0;
+            else return 1;
+        }
+        else
+        {
+            if (y.index == UtilsGeneral.INVALID_INDEX)
+                return -1;
+            else
+            {
+                // Both values are valid
+                return x.value < y.value ? -1 : (x.value > y.value ? 1 : 0);
+            }
+        }
+
+    }
+}
+
 // These are actions that needs to be taken whatever utility there is (forced , imposed actions like).
 public class ImminentActions
 {
@@ -151,10 +184,10 @@ public class AIBehaviorActions
             m_tempSortedBoxes[i] = new IndexValuePosPair();
         }
 
-        m_tempSortedOpponentsToBox = new IndexValuePosPair[numTotalTanks];
+        m_tempSortedOpponents = new IndexValuePosPair[numTotalTanks];
         for (int i = 0; i < numTotalTanks; i++)
         {
-            m_tempSortedOpponentsToBox[i] = new IndexValuePosPair();
+            m_tempSortedOpponents[i] = new IndexValuePosPair();
         }
         
         m_tempSortedBoxes_count = m_tempSortedOpponents_count = 0;
@@ -286,50 +319,49 @@ public class AIBehaviorActions
         return (totalDist / TankMovement.m_Speed);
     }
 
-
-    class IndexValuePosPair
-    {
-        public int index;
-        public float value;
-        public Vector3 pos;
-
-    };
-    
-    class IndexValuePairLowestComparer : IComparer<IndexValuePosPair>
-    {
-        public int Compare(IndexValuePosPair x, IndexValuePosPair y)
-        {
-            // Compare x and y in reverse order. If one is invalid is put to the end of the sorted array always
-            if (x.index == UtilsGeneral.INVALID_INDEX)
-            {
-                if (y.index == UtilsGeneral.INVALID_INDEX)
-                    return 0;
-                else return 1;
-            }
-            else
-            {
-                if (y.index == UtilsGeneral.INVALID_INDEX)
-                    return -1;
-                else
-                {
-                    // Both values are valid
-                    return x.value < y.value ? -1 : (x.value > y.value ? 1 : 0);
-                }
-            }
-            
-        }
-    }
-
     // These are constants and preallocated arrays for computing various queries for box finding
-    const int m_param_BoxFind_closestOpponentsLookingFor = 3; 
-    const int m_param_BoxFind_closestBoxNumbersLookingFor = 3;
-    const float m_param_alphaTime = 0.75f; // How important is the time ratio
-    const float m_param_angleX1 = 30, m_param_angleX2 = 180, m_param_angleY1 = 0.4f, m_param_angleY2 = 0.0f; // Interpolation direction_to_box inputs (angles) and probability output. Reflects belief of agent going to the target with his current direction
     IndexValuePairLowestComparer m_indexValuePairComparer = new IndexValuePairLowestComparer();
     IndexValuePosPair[] m_tempSortedBoxes;
-    IndexValuePosPair[] m_tempSortedOpponentsToBox;
-    int m_tempSortedBoxes_count = 0;
-    int m_tempSortedOpponents_count = 0;
+    IndexValuePosPair[] m_tempSortedOpponents;
+    int m_tempSortedBoxes_count         = 0;
+    int m_tempSortedOpponents_count     = 0;
+
+    public void FindClosestOpponentsToAgent(TankManager agent, GlobalAIBlackBox globalBlackboard,
+                                            out IndexValuePosPair[]sortedClosestAgents, out int numClosestAgents)
+    {
+        numClosestAgents    = 0;
+        Vector3 agentPos    = agent.m_Instance.transform.position;
+        sortedClosestAgents = null;
+
+        // Take the sorted list of agents closest to that box (first M)
+        TankManager[] tanks = globalBlackboard.m_TanksRef;
+        m_tempSortedOpponents_count = 0;
+
+        for (int oppIdx = 0; oppIdx < tanks.Length; oppIdx++)
+        {
+            // Init with an invalid value every entry
+            m_tempSortedOpponents[oppIdx].value = UtilsGeneral.MAX_SCORE_VALUE; // max because it's distance, and we sort ascending
+            m_tempSortedOpponents[oppIdx].index = UtilsGeneral.INVALID_INDEX;
+
+            TankManager tankIter = tanks[oppIdx];
+            if (tankIter.m_Instance == m_base.gameObject || tankIter.IsAlive() == false)
+            {
+                continue;
+            }
+
+            Vector3 tankIterPos = tankIter.m_Instance.transform.position;
+
+            m_tempSortedOpponents[m_tempSortedOpponents_count].index = oppIdx;
+            m_tempSortedOpponents[m_tempSortedOpponents_count].value = GetEstimatedTimeSourceToStaticTarget_Fast(tankIterPos, agentPos);//Vector3.Distance(tankIterPos, thisTankPos);
+            m_tempSortedOpponents[m_tempSortedOpponents_count].pos = tankIterPos;
+            m_tempSortedOpponents_count++;
+        }
+
+        System.Array.Sort(m_tempSortedOpponents, 0, m_tempSortedOpponents_count, m_indexValuePairComparer);
+
+        numClosestAgents    = m_tempSortedOpponents_count;
+        sortedClosestAgents = m_tempSortedOpponents;
+    }
 
 
     // Returns false if no compatible box was found.
@@ -364,7 +396,7 @@ public class AIBehaviorActions
         float bestBoxScore    = UtilsGeneral.MAX_SCORE_VALUE;
 
         // Take the sorted list of closest boxes (first K)
-        for (int boxIdx = 0; boxIdx < m_param_BoxFind_closestBoxNumbersLookingFor; boxIdx++)
+        for (int boxIdx = 0; boxIdx < AIBehavior_Utility.Params.m_bfClosestBoxNumbersLookingFor; boxIdx++)
         {
             if (boxIdx >= m_tempSortedBoxes_count)
             {
@@ -382,8 +414,8 @@ public class AIBehaviorActions
                 for (int oppIdx = 0; oppIdx < tanks.Length; oppIdx++)
                 {
                     // Init with an invalid value every entry
-                    m_tempSortedOpponentsToBox[oppIdx].value = UtilsGeneral.MAX_SCORE_VALUE; // max because it's distance, and we sort ascending
-                    m_tempSortedOpponentsToBox[oppIdx].index = UtilsGeneral.INVALID_INDEX;
+                    m_tempSortedOpponents[oppIdx].value = UtilsGeneral.MAX_SCORE_VALUE; // max because it's distance, and we sort ascending
+                    m_tempSortedOpponents[oppIdx].index = UtilsGeneral.INVALID_INDEX;
 
                     TankManager tankIter = tanks[oppIdx];
                     if (tankIter.m_Instance == m_base.gameObject || tankIter.IsAlive() == false)
@@ -393,18 +425,18 @@ public class AIBehaviorActions
 
                     Vector3 tankIterPos = tankIter.m_Instance.transform.position;
 
-                    m_tempSortedOpponentsToBox[m_tempSortedOpponents_count].index = oppIdx;
-                    m_tempSortedOpponentsToBox[m_tempSortedOpponents_count].value = GetEstimatedTimeSourceToStaticTarget_Fast(tankIterPos, thisBoxPos);//Vector3.Distance(tankIterPos, thisTankPos);
-                    m_tempSortedOpponentsToBox[m_tempSortedOpponents_count].pos = tankIterPos;
+                    m_tempSortedOpponents[m_tempSortedOpponents_count].index = oppIdx;
+                    m_tempSortedOpponents[m_tempSortedOpponents_count].value = GetEstimatedTimeSourceToStaticTarget_Fast(tankIterPos, thisBoxPos);//Vector3.Distance(tankIterPos, thisTankPos);
+                    m_tempSortedOpponents[m_tempSortedOpponents_count].pos = tankIterPos;
                     m_tempSortedOpponents_count++;
                 }
 
-                System.Array.Sort(m_tempSortedOpponentsToBox, 0, m_tempSortedOpponents_count, m_indexValuePairComparer);
+                System.Array.Sort(m_tempSortedOpponents, 0, m_tempSortedOpponents_count, m_indexValuePairComparer);
             }
 
             // Now, for this box, check our probability against each of the M agents
             // We'll keep the relative score in each m_tempSortedOpponentsToBox location
-            for (int oppIdx = 0; oppIdx < m_param_BoxFind_closestOpponentsLookingFor; oppIdx++)
+            for (int oppIdx = 0; oppIdx < AIBehavior_Utility.Params.m_bfClosestOpponentsLookingFor; oppIdx++)
             {
                 if (oppIdx >= m_tempSortedOpponents_count)
                 {
@@ -415,40 +447,46 @@ public class AIBehaviorActions
                 // Compare the angle between (opponent to boxn VS  current opponent avg dir)
 
                 // First, compute the  probability that the opponent has to get to the box by looking at his direction and estimated time to target
-                Vector3 thisOpponentPos                     = m_tempSortedOpponentsToBox[oppIdx].pos;
-                int thisOpponentGlobalIndex                 = m_tempSortedOpponentsToBox[oppIdx].index;
+                Vector3 thisOpponentPos                     = m_tempSortedOpponents[oppIdx].pos;
+                int thisOpponentGlobalIndex                 = m_tempSortedOpponents[oppIdx].index;
                 Vector3 opponentToBox                       = thisBoxPos - thisOpponentPos;
                 Vector3 thisOpponentAvgVel                  = tanks[thisOpponentGlobalIndex].m_Movement.m_movingAvgVel;
                 float angleBetweenDirs                      = Vector3.Angle(thisOpponentAvgVel, opponentToBox);
-                float intentionProbability                  = UtilsGeneral.lerp(angleBetweenDirs, m_param_angleX1, m_param_angleX2, m_param_angleY1, m_param_angleY2);
+                float intentionProbability                  = UtilsGeneral.lerp(angleBetweenDirs,
+                                                                                AIBehavior_Utility.Params.m_angleX1,
+                                                                                AIBehavior_Utility.Params.m_angleX2,
+                                                                                AIBehavior_Utility.Params.m_angleY1,
+                                                                                AIBehavior_Utility.Params.m_angleY2);
 
 
                 // Compute the opponent probability of this opponent relative THIS TANK 
-                float opponentTimeToThisBox                 = m_tempSortedOpponentsToBox[oppIdx].value;
+                float opponentTimeToThisBox                 = m_tempSortedOpponents[oppIdx].value;
                 float timeToGetProbability_raw              = (ourAgentTimeToThisBox / (opponentTimeToThisBox + Mathf.Epsilon));
                 float timeToGetProbability_clamped          = Mathf.Clamp(timeToGetProbability_raw, 0.0f, 1.0f);
 
-                float totalOpponentProbability               = timeToGetProbability_clamped * m_param_alphaTime + (1.0f - m_param_alphaTime) * intentionProbability;
+                float alpha                                 = AIBehavior_Utility.Params.m_boxAlphaTime;
+                float totalOpponentProbability               = timeToGetProbability_clamped * alpha + 
+                                                                (1.0f - alpha) * intentionProbability;
 
                 // This contains the opponent probability relative to THIS TANK
-                m_tempSortedOpponentsToBox[oppIdx].value    = Mathf.Clamp(totalOpponentProbability, 0.0f, 1.0f);
+                m_tempSortedOpponents[oppIdx].value    = Mathf.Clamp(totalOpponentProbability, 0.0f, 1.0f);
             }
 
             // Now select the best positioned opponent to this box (the one with the highest probability relative to THIS TANK)
             // the lowest for THIS TANK
             int bestOppIdxToThisBox                         = -1;
             float bestOppValueToThisBox                     = UtilsGeneral.MIN_SCORE_VALUE;
-            for (int oppIdx = 0; oppIdx < m_param_BoxFind_closestOpponentsLookingFor; oppIdx++)
+            for (int oppIdx = 0; oppIdx < AIBehavior_Utility.Params.m_bfClosestOpponentsLookingFor; oppIdx++)
             {
                 if (oppIdx >= m_tempSortedOpponents_count)
                 {
                     break;
                 }
 
-                if (m_tempSortedOpponentsToBox[oppIdx].value > bestOppValueToThisBox)
+                if (m_tempSortedOpponents[oppIdx].value > bestOppValueToThisBox)
                 {
-                    bestOppValueToThisBox = m_tempSortedOpponentsToBox[oppIdx].value;
-                    bestOppIdxToThisBox = m_tempSortedOpponentsToBox[oppIdx].index;
+                    bestOppValueToThisBox = m_tempSortedOpponents[oppIdx].value;
+                    bestOppIdxToThisBox = m_tempSortedOpponents[oppIdx].index;
                 }
             }
 

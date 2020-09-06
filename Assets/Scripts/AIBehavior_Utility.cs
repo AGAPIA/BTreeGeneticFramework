@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 // For upgrade evaluation of different type of boxes
@@ -30,11 +31,41 @@ public class AIBehavior_Utility : AIBehavior
     }
     //------------------------
 
+    [Serializable]
+    public class Params
+    {
+        // These are parameters for box finding
+        //---------
+        [Tooltip("How many closest boxes around agent to look for")]
+        public const int m_bfClosestBoxNumbersLookingFor = 3;
+        [Tooltip("How many closest opponents around to look for when evaluating a box")]
+        public const int m_bfClosestOpponentsLookingFor = 3;
+        [Tooltip("How important is time ratio vs intention (see paper)")]
+        public const float m_boxAlphaTime = 0.75f; // How important is the time ratio
+        [Tooltip("Interpolation factors to give ")]
+        public const float m_angleX1 = 30, m_angleX2 = 180, m_angleY1 = 0.4f, m_angleY2 = 0.0f; // Interpolation direction_to_box inputs (angles) and probability output. Reflects belief of agent going to the target with his current direction
+        //---------
+
+
+        // These are parameters for defense
+        //---------
+        [Tooltip("How many closest opponents around to look for when evaluating a box")]
+        public const int m_defClosestOpponentsLookingFor = 3;
+        // Need for life interp params
+        public const float m_lifeX1 = 0.0f; // TODO: add all other paramerters here.
+        //
+        //---------
+
+        // These are parameters for attack
+        //---------
+
+        //---------
+    }
+
 
     // 
     [Tooltip("Score for IDLE action. If no better score is found by utility AI, idle will be selected")]
     public static float BASE_IDLE_SCORE = 0.001f;
-
 
     public void DoScoreBoxUpgrades(out float score, out BoxType outBoxTypeToLookAfter, out Vector3 outBoxPosToLookAfter)
 	{
@@ -154,6 +185,37 @@ public class AIBehavior_Utility : AIBehavior
                 outBoxPosToLookAfter    = m_evaluationByType[i].pos;
                 outBoxTypeToLookAfter   = (BoxType)i;
             }
+        }
+    }
+
+    public void DoScoreDefend(out float scoreForDefend, out bool isCoverPreferred, out Vector3 coverPosPreferred)
+    {
+        scoreForDefend      = UtilsGeneral.MIN_SCORE_VALUE;
+        isCoverPreferred    = false;
+        coverPosPreferred   = Vector3.zero;
+
+        // TODO: do cover scores. Currently just the second branch of the tree is implemented for defense
+        // Proposed idea:
+        // Find cover positions either automaticlaly by sampling the points around closest enemies which are on navmesh and no ray is visible to enemies.
+        // Compute the probabiliy of success as: how long is the agent exposed to any of the closest enemies while he gets in the chosen cover spot.
+        //////
+        ///
+
+
+    }
+
+    public void DoScoreAttack(out float scoreForAttack)
+    {
+        //TODO: this is just a dummy think, need to take into account the personalities of the player etc...
+
+        // How long idle should be a personality maybe...
+        bool wasIdleForTooLong = m_localAIBlackBox.m_currentState == AIBehaviorState.BS_IDLE && m_localAIBlackBox.m_timeInCurrentAction >= 0.1;
+        bool prevWasIdleAnyway = m_localAIBlackBox.m_prevState == AIBehaviorState.BS_IDLE;
+
+        scoreForAttack = AIBehavior_Utility.BASE_IDLE_SCORE;
+        if (wasIdleForTooLong || prevWasIdleAnyway)
+        {
+            scoreForAttack += 0.001f;
         }
     }
 
@@ -281,27 +343,45 @@ public class AIBehavior_Utility : AIBehavior
 
             if (scoreForBoxes > bestScoreSoFar)
             {
-                m_localAIBlackBox.m_currentState        = AIBehaviorState.BS_FIND_BOX;
+                m_localAIBlackBox.setNewCurrentState(AIBehaviorState.BS_FIND_BOX); // TODO: or do it by cover !!
                 m_localAIBlackBox.m_boxLookingFor_pos   = boxPosToLookAfter;
                 m_localAIBlackBox.m_boxLookingFor_type  = boxTypeToLookAfter;
+
                 bestScoreSoFar                          = scoreForBoxes;
             }
         }
 
         // 2. Score Defend
         {
+            float scoreForDefend            = 0.0f;
+            bool isCoverPreferred           = false;
+            Vector3 coverPosPreferred       = Vector3.zero; // set only if above is true
+            DoScoreDefend(out scoreForDefend, out isCoverPreferred, out coverPosPreferred);
 
+            if (scoreForDefend > bestScoreSoFar)
+            {
+                // TODO other parameters...
+                m_localAIBlackBox.setNewCurrentState(AIBehaviorState.BS_DEFEND); // TODO: or do it by cover !!
+                bestScoreSoFar = scoreForDefend;
+            }
         }
 
         // 3. Score Attack
         {
+            float scoreForAttack            = 0.0f;
+            DoScoreAttack(out scoreForAttack);
 
+            if (scoreForAttack > bestScoreSoFar)
+            {
+                m_localAIBlackBox.setNewCurrentState(AIBehaviorState.BS_ATTACK); // TODO: or do it by cover !!
+                bestScoreSoFar = scoreForAttack;
+            }
         }
 
         // Default to idle if no good action to take. At least, conserve the energy
         if (bestScoreSoFar <= AIBehavior_Utility.BASE_IDLE_SCORE)
         {
-            m_localAIBlackBox.m_currentState = AIBehaviorState.BS_IDLE;
+            m_localAIBlackBox.setNewCurrentState(AIBehaviorState.BS_IDLE);
         }
     }
 

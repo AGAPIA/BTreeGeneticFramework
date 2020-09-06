@@ -674,6 +674,7 @@ GameObject:
   - component: {fileID: 432309651}
   - component: {fileID: 7268429113668611002}
   - component: {fileID: 5229181624960764144}
+  - component: {fileID: 6094010928912823797}
   m_Layer: 9
   m_Name: Tank
   m_TagString: Player
@@ -1043,7 +1044,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 159488}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2514303c78d1045c6be17f45a31834b2, type: 3}
   m_Name: 
@@ -1072,6 +1073,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83e16e0ad752b4a59924e7d227c582ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &6094010928912823797
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 159488}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6108fd6007ba04804942343118376e95, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_minTimeToContinueSameAction: 4
+  m_maxTimeToContinueSameAction: 10
+  m_tankMovement: {fileID: 0}
+  m_tankShooting: {fileID: 0}
+  m_tankHealth: {fileID: 0}
+  m_fireTransform: {fileID: 0}
+  m_rigidBody: {fileID: 0}
+  m_navMeshAgent: {fileID: 0}
+  m_id: -1
+  m_EnemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 512
 --- !u!1 &163644
 GameObject:
   m_ObjectHideFlags: 0
