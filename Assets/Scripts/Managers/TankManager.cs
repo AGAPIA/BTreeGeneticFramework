@@ -117,11 +117,13 @@ public class TankManager
     }
 
    
-    public void SetPlayerAsHuman(int humanId)
+    public void SetPlayerAsHuman(int humanId, GlobalAIBlackBox aiGlobalBlackBox)
     {
         m_PlayerNumber = humanId;
         m_AI = m_Instance.GetComponent<AIBehavior>();
         m_AI.enabled = false;
+        m_AI.SetGlobalBlackbox(aiGlobalBlackBox);
+        m_AI.m_id = -1;
     }
 
     public void SetPlayerAsAI(int id, GlobalAIBlackBox aiGlobalBlackBox)

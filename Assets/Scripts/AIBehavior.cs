@@ -90,7 +90,10 @@ public abstract class AIBehavior : MonoBehaviour
     // Gathers informations for the local AI blackboard
     void FillLocalBlackBoard()
     {
-        m_localAIBlackBox.deltaTime = Time.deltaTime;
+        if (m_localAIBlackBox != null)
+        {
+            m_localAIBlackBox.deltaTime = Time.deltaTime;
+        }
     }
 
     public void SetGlobalBlackbox(GlobalAIBlackBox aiGlobalBlackBox)
@@ -116,25 +119,29 @@ public abstract class AIBehavior : MonoBehaviour
     public int m_id = -1;
     public LayerMask m_EnemyLayerMask;
 
-    protected AIBehaviorActions m_actions;
+    public AIBehaviorActions m_actions;
+
+    public void init()
+    {
+        //m_tankRigidBody = gameObject.GetComponent<Rigidbody>();
+        m_localAIBlackBox = new LocalAIBlackBoard();
+
+        m_tankMovement = gameObject.GetComponent<TankMovement>();
+        m_tankShooting = gameObject.GetComponent<TankShooting>();
+        m_tankHealth = gameObject.GetComponent<TankHealth>();
+        m_fireTransform = gameObject.transform.Find("FireTransform");
+        m_rigidBody = gameObject.GetComponent<Rigidbody>();
+        m_navMeshAgent = GetComponent<NavMeshAgent>();
+
+        //m_navMeshAgent.speed = m_tankMovement.m_Speed * GameManager.m_SpeedMultiplier;
+        //m_navMeshAgent.angularSpeed = m_tankMovement.m_TurnSpeed * GameManager.m_SpeedMultiplier;
+        m_actions = new AIBehaviorActions(this);
+    }
 
     // Start is called before the first frame update
     void Start()
     {
-        
-        //m_tankRigidBody = gameObject.GetComponent<Rigidbody>();
-        m_localAIBlackBox = new LocalAIBlackBoard();
-
-        m_tankMovement  = gameObject.GetComponent<TankMovement>();
-        m_tankShooting  = gameObject.GetComponent<TankShooting>();
-        m_tankHealth    = gameObject.GetComponent<TankHealth>();
-        m_fireTransform = gameObject.transform.Find("FireTransform");
-        m_rigidBody     = gameObject.GetComponent<Rigidbody>();
-        m_navMeshAgent  = GetComponent<NavMeshAgent>();
-
-        //m_navMeshAgent.speed = m_tankMovement.m_Speed * GameManager.m_SpeedMultiplier;
-        //m_navMeshAgent.angularSpeed = m_tankMovement.m_TurnSpeed * GameManager.m_SpeedMultiplier;
-        m_actions       = new AIBehaviorActions(this);
+        init();
     }
 
     // Executes an action based on observations.

@@ -130,6 +130,8 @@ public class GameManager : MonoBehaviour
     public Text m_MessageText;                  // Reference to the overlay Text to display winning text, etc.
     public GameObject m_TankPrefab;             // Reference to the prefab the players will control.
 
+
+
     public static float m_SpeedMultiplier = 1.0f;      // Speed multiplier for faster simulation
      
     public TankManager[] m_AiTanks;            // A collection of managers for enabling and disabling different aspects of the tanks.
@@ -140,6 +142,12 @@ public class GameManager : MonoBehaviour
     public TankManager[] m_Tanks;               // Union of the two above since it is easier to manager
 
     private bool m_enableTanksTextUI = true;
+
+    public GameObject m_TutorialArrowPrefab;
+    public GameObject m_TutorialCirclePrefab;
+    public Text m_TutorialMessageText;                  // Reference to the overlay Text to display winning text, etc.
+    // The number of maximum game objects that could be indicated by drawings 
+    public int m_TutorialMaxIndicatedObjects;
 
     public bool EnableTanksTextUI
     {
@@ -159,6 +167,8 @@ public class GameManager : MonoBehaviour
     private TankManager m_RoundWinner;          // Reference to the winner of the current round.  Used to make an announcement of who won.
     private TankManager m_GameWinner;           // Reference to the winner of the game.  Used to make an announcement of who won.
     Transform[] m_spawnpoints;                 // The spawnpoints authored on the map
+
+    public TutorialManager m_TutorialManager;
 
     [HideInInspector]
     public AITanksSpawnConfig[] m_forcedSpawnPointsOrder;  // The spawned positions order imposed by somewhere else. Can be used for custom scenarios or for testing purposes
@@ -184,8 +194,16 @@ public class GameManager : MonoBehaviour
         SpawnAllTanks(true);
         SetCameraTargets();
 
+        SetupTutorial();
+
         // Once the tanks have been created and the camera is using them as targets, start the game.
         StartCoroutine(GameLoop());
+    }
+
+    void SetupTutorial()
+    {
+        m_TutorialManager = new TutorialManager();
+        m_TutorialManager.setup(m_AIGlobalBlackBox, m_TutorialMaxIndicatedObjects, m_TutorialArrowPrefab, m_TutorialCirclePrefab, m_TutorialMessageText);
     }
 
     private void Update()
@@ -199,6 +217,8 @@ public class GameManager : MonoBehaviour
 
             m_Tanks[i].Update();
         }
+
+        m_TutorialManager.Update();
     }
 
     // This is used to gather data in the global blackbox and make everything visible from environment to the AI side
@@ -300,7 +320,7 @@ public class GameManager : MonoBehaviour
                 int playerId = i;
                 if (spawnAsHuman)
                 {
-                    m_Tanks[i].SetPlayerAsHuman(playerId);
+                    m_Tanks[i].SetPlayerAsHuman(playerId, m_AIGlobalBlackBox);
                     m_Tanks[i].m_PlayerColor = colorsToUseForHumans[i];
                 }
                 else
@@ -317,6 +337,8 @@ public class GameManager : MonoBehaviour
 
         m_AIDebugHelper = gameObject.GetComponent<AIDebugHelper>();
         m_AIDebugHelper.Setup(m_Tanks);
+
+        GatherGlobalBlackboxData();
     }
 
 
