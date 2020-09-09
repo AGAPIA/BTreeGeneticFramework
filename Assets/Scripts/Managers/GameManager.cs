@@ -143,6 +143,7 @@ public class GameManager : MonoBehaviour
 
     private bool m_enableTanksTextUI = true;
 
+    public bool m_isTutorialEnabled = true;
     public GameObject m_TutorialArrowPrefab;
     public GameObject m_TutorialCirclePrefab;
     public Text m_TutorialMessageText;                  // Reference to the overlay Text to display winning text, etc.
@@ -168,6 +169,7 @@ public class GameManager : MonoBehaviour
     private TankManager m_GameWinner;           // Reference to the winner of the game.  Used to make an announcement of who won.
     Transform[] m_spawnpoints;                 // The spawnpoints authored on the map
 
+    [HideInInspector]
     public TutorialManager m_TutorialManager;
 
     [HideInInspector]
@@ -194,7 +196,10 @@ public class GameManager : MonoBehaviour
         SpawnAllTanks(true);
         SetCameraTargets();
 
-        SetupTutorial();
+        if (m_isTutorialEnabled)
+        {
+            SetupTutorial();
+        }
 
         // Once the tanks have been created and the camera is using them as targets, start the game.
         StartCoroutine(GameLoop());
@@ -218,7 +223,10 @@ public class GameManager : MonoBehaviour
             m_Tanks[i].Update();
         }
 
-        m_TutorialManager.Update();
+        if (m_isTutorialEnabled)
+        {
+            m_TutorialManager.Update();
+        }
     }
 
     // This is used to gather data in the global blackbox and make everything visible from environment to the AI side

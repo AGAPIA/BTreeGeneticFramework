@@ -15,18 +15,17 @@ public class DataContainer : MonoBehaviour
     {
         // Adding by hand a box collider, it will match the rendering mesh size by default
         //boxDetails = default;
-        gameObject.AddComponent<BoxCollider>();
-
-        /*
         BoxCollider boxCollider = gameObject.AddComponent<BoxCollider>();
-        If you want to manually scale the boxcollider you can use the following
+        //If you want to manually scale the boxcollider you can use the following
 
-         MeshRenderer renderer = gameObject.getcomponent<MeshRenderer>();
-        boxCollider.center = renderer.bounds.center;
-        boxCollider.size = renderer.bounds.size;
-
-
-        */
+        
+        if (boxType == BoxType.BOXTYPE_AMMO)
+        {
+            MeshRenderer renderer = gameObject.GetComponent<MeshRenderer>();
+            boxCollider.center = renderer.bounds.center;
+            boxCollider.size = renderer.bounds.size;
+        }
+        
     }
 
     public void SetData(BoxesSpawnScript observer, BoxType _type, int _id)

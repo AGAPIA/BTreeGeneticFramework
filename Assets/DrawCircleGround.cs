@@ -13,17 +13,19 @@ public class DrawCircleGround : MonoBehaviour
     public float xradius = 5;
     [Range(0, 5)]
     public float yradius = 5;
-    LineRenderer line;
+    LineRenderer m_refLine;
 
     private float m_currentTime = 0.0f;
+    public Color m_baseColor = new Color(1.0f, 0.0f, 0.0f, 1.0f);
+
 
     // Start is called before the first frame update
     void Start()
     {
-        line = gameObject.GetComponent<LineRenderer>();
-        //line.material = new Material(Shader.Find("Legacy Shaders/Particles/Additive"));
-        line.positionCount = segments + 1;
-        line.useWorldSpace = false;
+        m_refLine = gameObject.GetComponent<LineRenderer>();
+        //m_refLine.material = new Material(Shader.Find("Legacy Shaders/Particles/Additive"));
+        m_refLine.positionCount = segments + 1;
+        m_refLine.useWorldSpace = false;
         CreatePoints();
     }
 
@@ -40,7 +42,7 @@ public class DrawCircleGround : MonoBehaviour
             x = Mathf.Sin(Mathf.Deg2Rad * angle) * xradius;
             z = Mathf.Cos(Mathf.Deg2Rad * angle) * yradius;
 
-            line.SetPosition(i, new Vector3(x, y, z));
+            m_refLine.SetPosition(i, new Vector3(x, y, z));
 
             angle += (360f / segments);
         }
@@ -50,7 +52,8 @@ public class DrawCircleGround : MonoBehaviour
     void Update()
     {
         m_currentTime += Time.deltaTime;
-        Color lineColor = new Color(1.0f, 0.0f, 0.0f, (float)Math.Abs(Math.Sin(m_currentTime*4)));
-        line.SetColors(lineColor, lineColor);
+
+        m_baseColor.a = (float) Math.Abs(Math.Sin(Time.time * 4));
+        m_refLine.startColor = m_refLine.endColor = m_baseColor;
     }
 }

@@ -83,7 +83,7 @@ public class TankMovement : MonoBehaviour
         }
 
         float alpha = UtilsGeneral.lerp(m_numFramesAlive, 0.0f, 9.0f, 0.0f, 0.95f); // In the beggining, take into account more the instant vel rather than history
-        m_movingAvgVel = m_lastMove * alpha + (1.0f - alpha) * m_lastMove;
+        m_movingAvgVel = m_IsAI ? (gameObject.transform.forward * m_Speed) : (m_lastMove * alpha + (1.0f - alpha) * m_lastMove);
 
         EngineAudio();
         m_numFramesAlive++;

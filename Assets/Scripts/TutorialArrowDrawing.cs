@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -14,6 +15,8 @@ public class TutorialArrowDrawing : MonoBehaviour
     public Vector3 m_arrowStart;
     [HideInInspector]
     public Vector3 m_arrowEnd;
+
+    public Color m_baseColor = new Color(1.0f, 0.0f, 0.0f, 1.0f);
 
     // Start is called before the first frame update
     void Start()
@@ -32,13 +35,15 @@ public class TutorialArrowDrawing : MonoBehaviour
         if (!isActiveAndEnabled)
             return;
 
-        float PercentHead = 0.4f;
+        float PercentHead = 0.01f;
         Vector3 ArrowOrigin = m_arrowStart;
         Vector3 ArrowTarget = m_arrowEnd;
         //Vector3 normalLineEnd = Vector3.Lerp(origin, target, 0.9f);
         //Vector3 arrowStart = Vector3.Lerp(origin, target, 0.91f);
-        
 
+
+        m_baseColor.a = (float)Math.Abs(Math.Sin(Time.time * 4));
+        m_lineRenderer.startColor = m_lineRenderer.endColor = m_baseColor;
 
 
         m_lineRenderer.enabled = true;
@@ -62,8 +67,5 @@ public class TutorialArrowDrawing : MonoBehaviour
                 , new Keyframe(1 - PercentHead, 1f)  // max width of arrow head
                 , new Keyframe(1, 0f));  // tip of arrow
         }
-
-
-
     }
 }

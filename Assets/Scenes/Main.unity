@@ -202,6 +202,10 @@ PrefabInstance:
       propertyPath: m_TutorialMaxIndicatedObjects
       value: 5
       objectReference: {fileID: 0}
+    - target: {fileID: 2133408678, guid: 16c39a1cc04404797bcc65913fcdf172, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 16c39a1cc04404797bcc65913fcdf172, type: 3}
 --- !u!114 &2133408681 stripped

@@ -10,8 +10,10 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Numerics;
 using UnityEngine;
 using UnityEngine.AI;
+using Vector3 = UnityEngine.Vector3;
 
 public class IndexValuePosPair
 {
@@ -183,10 +185,10 @@ public class AIBehaviorActions
         GameManager gameManager = mainObject.GetComponent<GameManager>();
         int numTotalTanks = gameManager.m_AiTanks.Length + gameManager.m_HumanTanks.Length;
         BoxesSpawnScript boxesSpawnManager = mainObject.GetComponent<BoxesSpawnScript>();
-        
 
-        m_tempSortedBoxes = new IndexValuePosPair[(int)boxesSpawnManager.MaxNumberOfBoxesPerType];
-        for (int i = 0; i < (int)boxesSpawnManager.MaxNumberOfBoxesPerType; i++)
+
+        m_tempSortedBoxes = new IndexValuePosPair[(int) boxesSpawnManager.MaxNumberOfBoxesPerType];
+        for (int i = 0; i < (int) boxesSpawnManager.MaxNumberOfBoxesPerType; i++)
         {
             m_tempSortedBoxes[i] = new IndexValuePosPair();
         }
@@ -196,7 +198,7 @@ public class AIBehaviorActions
         {
             m_tempSortedOpponents[i] = new IndexValuePosPair();
         }
-        
+
         m_tempSortedBoxes_count = m_tempSortedOpponents_count = 0;
     }
 
@@ -278,20 +280,20 @@ public class AIBehaviorActions
         bool isOtherTankVisibleFromThis = false;
 
         RaycastHit hit;
-        Ray ray         = default(Ray);
-        ray.origin      = m_base.m_fireTransform.position; 
-        ray.direction   = m_base.m_fireTransform.forward; 
-        int layerMask   = ~0;
+        Ray ray = default(Ray);
+        ray.origin = m_base.m_fireTransform.position;
+        ray.direction = m_base.m_fireTransform.forward;
+        int layerMask = ~0;
         if (Physics.Raycast(ray, out hit, maxDistance + 2.0f, layerMask))
         {
-            bool isEnemyMask                            = ((m_base.m_EnemyLayerMask & (1 << hit.transform.gameObject.layer))) != 0;
-            bool isTargetTheCorrectTank                 = hit.transform == otherTankTransform;
+            bool isEnemyMask = ((m_base.m_EnemyLayerMask & (1 << hit.transform.gameObject.layer))) != 0;
+            bool isTargetTheCorrectTank = hit.transform == otherTankTransform;
 
-            isOtherTankVisibleFromThis                  = isEnemyMask && isTargetTheCorrectTank;
+            isOtherTankVisibleFromThis = isEnemyMask && isTargetTheCorrectTank;
 
             // Complete some debug info
-            m_base.m_iminentActions.lastShootRayHit     = hit;
-            m_base.m_iminentActions.lastUsedShootRay    = ray;
+            m_base.m_iminentActions.lastShootRayHit = hit;
+            m_base.m_iminentActions.lastUsedShootRay = ray;
             m_base.m_iminentActions.lastShootRayHitTank = isOtherTankVisibleFromThis;
         }
 
@@ -330,14 +332,81 @@ public class AIBehaviorActions
     IndexValuePairLowestComparer m_indexValuePairComparer = new IndexValuePairLowestComparer();
     IndexValuePosPair[] m_tempSortedBoxes;
     IndexValuePosPair[] m_tempSortedOpponents;
-    int m_tempSortedBoxes_count         = 0;
-    int m_tempSortedOpponents_count     = 0;
+    int m_tempSortedBoxes_count = 0;
+    int m_tempSortedOpponents_count = 0;
 
-    public void FindClosestOpponentsToAgent(TankManager agent, GlobalAIBlackBox globalBlackboard,
+    // Evaluate how good a tank is and return a value between 0-1
+    public float EvaluateTankDangerStatus(TankManager agent)
+    {
+        // Does it have shield ?
+        if (agent.m_Addons.IsUpgradeActive(UpgradeType.E_UPGRADE_SHIELD))
+            return 1.0f; // Maximum :)
+
+        float res = 0.0f;
+        // Does it have weapon upgrade
+        if (agent.m_Addons.IsUpgradeActive(UpgradeType.E_UPGRADE_WEAPON))
+        {
+            res += 0.3f; // TODO: depend on evaluator's personality point of view !
+        }
+
+        // Does it have health ?
+        res += Mathf.Lerp(0.0f, 1.0f, (agent.m_Health.GetRemainingLifePercent())); // Same TODO as above
+
+        return res;
+    }
+
+    public void FindClosestOpponentsChasingTank(TankManager agent, GlobalAIBlackBox globalBlackboard,
                                             out IndexValuePosPair[]sortedClosestAgents, out int numClosestAgents)
     {
         numClosestAgents    = 0;
         Vector3 agentPos    = agent.m_Instance.transform.position;
+        sortedClosestAgents = null;
+
+        // Take the sorted list of agents closest to that box (first M)
+        TankManager[] tanks = globalBlackboard.m_TanksRef;
+        m_tempSortedOpponents_count = 0;
+
+        for (int oppIdx = 0; oppIdx < tanks.Length; oppIdx++)
+        {
+            // Init with an invalid value every entry
+            m_tempSortedOpponents[oppIdx].value = UtilsGeneral.MAX_SCORE_VALUE; // max because it's distance, and we sort ascending
+            m_tempSortedOpponents[oppIdx].index = UtilsGeneral.INVALID_INDEX;
+
+            TankManager tankIter = tanks[oppIdx];
+            if (tankIter.m_Instance == m_base.gameObject || tankIter.IsAlive() == false)
+            {
+                continue;
+            }
+
+            Vector3 tankIterPos = tankIter.m_Instance.transform.position;
+
+            Vector3 thisOpponentAvgVel = tankIter.m_Movement.m_movingAvgVel;
+            Vector3 opponentToAgent =  - tankIterPos;
+            float angleBetweenDirs = Vector3.Angle(thisOpponentAvgVel, opponentToAgent);
+
+            if (angleBetweenDirs > 40.0f)
+            {
+                continue;
+            }
+
+
+            m_tempSortedOpponents[m_tempSortedOpponents_count].index = oppIdx;
+            m_tempSortedOpponents[m_tempSortedOpponents_count].value = Vector3.Distance(tankIterPos, agentPos);
+            m_tempSortedOpponents[m_tempSortedOpponents_count].pos = tankIterPos;
+            m_tempSortedOpponents_count++;
+        }
+
+        System.Array.Sort(m_tempSortedOpponents, 0, m_tempSortedOpponents_count, m_indexValuePairComparer);
+
+        numClosestAgents    = m_tempSortedOpponents_count;
+        sortedClosestAgents = m_tempSortedOpponents;
+    }
+
+    public void FindClosestOpponentsToAgent(TankManager agent, GlobalAIBlackBox globalBlackboard,
+        out IndexValuePosPair[] sortedClosestAgents, out int numClosestAgents)
+    {
+        numClosestAgents = 0;
+        Vector3 agentPos = agent.m_Instance.transform.position;
         sortedClosestAgents = null;
 
         // Take the sorted list of agents closest to that box (first M)
@@ -366,8 +435,66 @@ public class AIBehaviorActions
 
         System.Array.Sort(m_tempSortedOpponents, 0, m_tempSortedOpponents_count, m_indexValuePairComparer);
 
-        numClosestAgents    = m_tempSortedOpponents_count;
+        numClosestAgents = m_tempSortedOpponents_count;
         sortedClosestAgents = m_tempSortedOpponents;
+    }
+
+    // This function will try to get the cover points for the agent as requested by params
+    public void FindBestCoverPositions(TankManager agent, 
+                                        GlobalAIBlackBox globalAIBlackbox, 
+                                        float SAFE_COVER_DISTANCE,  // What distance is conidered safe against any enemy
+                                        int IDEAL_NUM_POINTS_TO_RETURN, // THe ideal number of cover points to find by this function
+                                        int MAX_NUM_POINTS_TO_EVALUATE, // The maximum number of cover poitns to evaluate in total
+        out IndexValuePosPair[] sortedClosestCoverPoints, out int numClosestCoverPoints)  // The output results
+    {
+        float SAFE_COVER_DISTANCE_SQR = SAFE_COVER_DISTANCE * SAFE_COVER_DISTANCE;
+
+        numClosestCoverPoints = 0;
+        Vector3 agentPos = agent.m_Instance.transform.position;
+        sortedClosestCoverPoints = null;
+
+        // Take the sorted list of agents closest to that box (first M)
+        TankManager[] tanks = globalAIBlackbox.m_TanksRef;
+        m_tempSortedBoxes_count = 0;
+
+        for (int tryIter = 0; tryIter < MAX_NUM_POINTS_TO_EVALUATE; tryIter++)
+        {
+            // Generate a new random point on the nav mesh
+            Vector3 coverPos = UtilsNavMesh_Impl.GenerateRandomPointOnMesh();
+
+            // Check whether this point is safe
+            bool isSafe = true;
+            foreach (TankManager enemy in globalAIBlackbox.m_TanksRef)
+            {
+                if (!enemy.IsAlive())
+                    continue;
+
+                Vector3 enemyPos = enemy.m_Instance.transform.position;
+
+                float distSqr = (enemyPos - coverPos).sqrMagnitude;
+                if (distSqr < SAFE_COVER_DISTANCE_SQR)
+                {
+                    isSafe = false;
+                    break;
+                }
+            }
+
+            if (!isSafe)
+                continue;
+
+            m_tempSortedBoxes[m_tempSortedBoxes_count].index = -1;
+            m_tempSortedBoxes[m_tempSortedBoxes_count].value = (agentPos - coverPos).sqrMagnitude;
+            m_tempSortedBoxes[m_tempSortedBoxes_count].pos = coverPos;
+            m_tempSortedBoxes_count++;
+
+            if (m_tempSortedBoxes_count >= IDEAL_NUM_POINTS_TO_RETURN)
+                break;
+        }
+
+        System.Array.Sort(m_tempSortedBoxes, 0, m_tempSortedBoxes_count, m_indexValuePairComparer);
+
+        numClosestCoverPoints = m_tempSortedBoxes_count;
+        sortedClosestCoverPoints = m_tempSortedBoxes;
     }
 
 
