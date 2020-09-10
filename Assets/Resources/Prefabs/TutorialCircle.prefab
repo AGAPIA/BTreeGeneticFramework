@@ -41,12 +41,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 3610425379593847352}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ac4c19fae18033c47bb0c270406fb524, type: 3}
+  m_Script: {fileID: 11500000, guid: 965679df53cdf5445b477218d3caaed0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   segments: 50
   xradius: 5
   yradius: 5
+  m_baseColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!120 &7768921970921995246
 LineRenderer:
   m_ObjectHideFlags: 0

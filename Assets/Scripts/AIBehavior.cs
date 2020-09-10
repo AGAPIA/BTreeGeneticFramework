@@ -11,6 +11,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 using Vector3 = UnityEngine.Vector3;
@@ -356,6 +357,7 @@ public class AIBehaviorActions
     }
 
     public void FindClosestOpponentsChasingTank(TankManager agent, GlobalAIBlackBox globalBlackboard,
+                                                float MAX_DISTANCE_TO_CONSIDER_CHASING, float MAX_DEGANGLE_BETWEEN_TO_CONSIDER_CHASING, // Maximum params for chasing
                                             out IndexValuePosPair[]sortedClosestAgents, out int numClosestAgents)
     {
         numClosestAgents    = 0;
@@ -381,10 +383,14 @@ public class AIBehaviorActions
             Vector3 tankIterPos = tankIter.m_Instance.transform.position;
 
             Vector3 thisOpponentAvgVel = tankIter.m_Movement.m_movingAvgVel;
-            Vector3 opponentToAgent =  - tankIterPos;
+            Vector3 opponentToAgent = agentPos - tankIterPos;
             float angleBetweenDirs = Vector3.Angle(thisOpponentAvgVel, opponentToAgent);
+            if (angleBetweenDirs > 90.0f)
+            {
+                angleBetweenDirs -= 90.0f;
+            }
 
-            if (angleBetweenDirs > 40.0f)
+            if (angleBetweenDirs > MAX_DEGANGLE_BETWEEN_TO_CONSIDER_CHASING || opponentToAgent.sqrMagnitude > (MAX_DISTANCE_TO_CONSIDER_CHASING*MAX_DEGANGLE_BETWEEN_TO_CONSIDER_CHASING))
             {
                 continue;
             }
@@ -457,6 +463,9 @@ public class AIBehaviorActions
         TankManager[] tanks = globalAIBlackbox.m_TanksRef;
         m_tempSortedBoxes_count = 0;
 
+        // This is a small trick / hack to get the points in a deterministic order..
+        Random.InitState(0);
+
         for (int tryIter = 0; tryIter < MAX_NUM_POINTS_TO_EVALUATE; tryIter++)
         {
             // Generate a new random point on the nav mesh
@@ -487,13 +496,13 @@ public class AIBehaviorActions
             m_tempSortedBoxes[m_tempSortedBoxes_count].pos = coverPos;
             m_tempSortedBoxes_count++;
 
-            if (m_tempSortedBoxes_count >= IDEAL_NUM_POINTS_TO_RETURN)
-                break;
+            //if (m_tempSortedBoxes_count >= IDEAL_NUM_POINTS_TO_RETURN)
+            //    break;
         }
 
         System.Array.Sort(m_tempSortedBoxes, 0, m_tempSortedBoxes_count, m_indexValuePairComparer);
 
-        numClosestCoverPoints = m_tempSortedBoxes_count;
+        numClosestCoverPoints = Mathf.Min(m_tempSortedBoxes_count, IDEAL_NUM_POINTS_TO_RETURN);
         sortedClosestCoverPoints = m_tempSortedBoxes;
     }
 

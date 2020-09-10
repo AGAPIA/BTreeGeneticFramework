@@ -194,12 +194,13 @@ public class GameManager : MonoBehaviour
         m_spawnManager = gameObject.GetComponentInChildren<BoxesSpawnScript>();
 
         SpawnAllTanks(true);
-        SetCameraTargets();
 
         if (m_isTutorialEnabled)
         {
             SetupTutorial();
         }
+
+        SetCameraTargets();
 
         // Once the tanks have been created and the camera is using them as targets, start the game.
         StartCoroutine(GameLoop());
@@ -353,13 +354,19 @@ public class GameManager : MonoBehaviour
     private void SetCameraTargets()
     {
         // Create a collection of transforms the same size as the number of tanks.
-        Transform[] targets = new Transform[m_Tanks.Length];
+        Transform[] cameraTargetsForTutorial = m_TutorialManager.GetCameraTargets();
+        Transform[] targets = new Transform[m_Tanks.Length + cameraTargetsForTutorial.Length];
 
         // For each of these transforms...
-        for (int i = 0; i < targets.Length; i++)
+        for (int i = 0; i < m_Tanks.Length; i++)
         {
             // ... set it to the appropriate tank transform.
             targets[i] = m_Tanks[i].m_Instance.transform;
+        }
+
+        for (int i = 0; i < cameraTargetsForTutorial.Length; i++)
+        {
+            targets[m_Tanks.Length + i] = cameraTargetsForTutorial[i];
         }
 
         // These are the targets the camera should follow.

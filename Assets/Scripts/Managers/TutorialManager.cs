@@ -157,7 +157,18 @@ public class TutorialManager
         m_MessageText.color = m_baseColor;
     }
 
-    private void HighlightObject(Vector3 pos, ref int numObjectsUsed)
+    public Transform[] GetCameraTargets()
+    {
+        Transform[] allObjectsToShowInCamera = new Transform[m_circleInstances.Length];
+        for (int i = 0; i < m_circleInstances.Length; i++)
+        {
+            allObjectsToShowInCamera[i] = m_circleInstances[i].transform;
+        }
+
+        return allObjectsToShowInCamera;
+    }
+
+    private void HighlightObject(Vector3 pos, ref int numObjectsUsed, Color forcedColor)
     {
         if (numObjectsUsed >= m_MaxIndicatedObjects)
         {
@@ -168,14 +179,22 @@ public class TutorialManager
         // Highglight it
         m_circleInstances[numObjectsUsed].SetActive(true);
         m_circleInstances[numObjectsUsed].transform.position = pos;
+        TutorialCircleGroundDrawing circleInst = m_circleInstances[numObjectsUsed].GetComponent<TutorialCircleGroundDrawing>();
+        circleInst.m_baseColor = forcedColor;
 
         // Customize the arrow
         m_arrowsInstances[numObjectsUsed].SetActive(true);
         TutorialArrowDrawing arrowInst = m_arrowsInstances[numObjectsUsed].GetComponent<TutorialArrowDrawing>();
         arrowInst.m_arrowStart = m_refUserTankAI.gameObject.transform.position;
         arrowInst.m_arrowEnd = pos;
+        arrowInst.m_baseColor = forcedColor;
 
         numObjectsUsed += 1;
+    }
+
+    private void HighlightObject(Vector3 pos, ref int numObjectsUsed)
+    {
+        HighlightObject(pos, ref numObjectsUsed, Color.red); // Default
     }
 
     public void Update()
@@ -264,13 +283,17 @@ public class TutorialManager
         {
             // Get closest enemies that looks like are chasing us.
             float MAX_DISTANCE_TO_CONSIDER_CHASING = 20.0f;
-            float SAFE_COVER_DISTANCE = 50.0f; // Minimum distance to consider safe against any enemies
+            float MAX_ANGLE_TO_CONSIDER_CHASING = 45.0f;
+            float SAFE_COVER_DISTANCE = 40.0f; // Minimum distance to consider safe against any enemies
             int IDEAL_NUM_POINTS_TO_RETURN = Math.Min(3, m_MaxIndicatedObjects);
             int MAX_NUM_POINTS_TO_EVALUATE = 100;
 
             IndexValuePosPair[] sortedClosestAgents;
             int numClosestAgents = 0;
-            m_refUserTankAI.m_actions.FindClosestOpponentsChasingTank(m_refUserTank, m_globalAIBlackbox, out sortedClosestAgents, out numClosestAgents);
+            m_refUserTankAI.m_actions.FindClosestOpponentsChasingTank(m_refUserTank, m_globalAIBlackbox, 
+                MAX_DISTANCE_TO_CONSIDER_CHASING,
+                MAX_ANGLE_TO_CONSIDER_CHASING,
+                out sortedClosestAgents, out numClosestAgents);
 
             // Is there any agent chasing us within some range ?
             if (numClosestAgents > 0 && sortedClosestAgents[0].value < MAX_DISTANCE_TO_CONSIDER_CHASING)
@@ -281,14 +304,18 @@ public class TutorialManager
                     MAX_NUM_POINTS_TO_EVALUATE,
                     out sortedCoverPoints, out numCoverPoints);
 
+                // Highlight the enemy chasing us
+                HighlightObject(sortedClosestAgents[0].pos, ref instancesUsedThisFrame, Color.red);
+
+                // Highlight the cover positions
                 if (numCoverPoints > 0)
                 {
                     for (int i = 0; i < numCoverPoints; i++)
                     {
-                        HighlightObject(sortedCoverPoints[i].pos, ref instancesUsedThisFrame);
+                        HighlightObject(sortedCoverPoints[i].pos, ref instancesUsedThisFrame, Color.green);
                     }
 
-                    setTextDecision(m_globalAIBlackbox, m_refUserTankAI.m_localAIBlackBox, ScenarioType.E_SCENARIO_WEAK_ENEMY);
+                    setTextDecision(m_globalAIBlackbox, m_refUserTankAI.m_localAIBlackBox, ScenarioType.E_SCENARIO_TAKE_COVER);
                 }
             }
 
