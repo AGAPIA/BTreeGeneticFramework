@@ -8,7 +8,7 @@ class UtilsNavMesh_Impl
     static Mesh m_levelNavMesh; // Here we store the mesh of the navmesh
     static float[] m_normalizedAreaWeights; // This stores the normalized area weights for all triangles inside the levelNavMesh
     static Rect m_safeArea;
-    
+
     public static void LoadAndPreprocessNavMesh(float safetyXPercent, float safetyYPercent)
     {
         NavMeshTriangulation triangulatedNavMesh = NavMesh.CalculateTriangulation();
@@ -16,7 +16,7 @@ class UtilsNavMesh_Impl
         m_levelNavMesh.name = "ExportedNavMesh";
         m_levelNavMesh.vertices = triangulatedNavMesh.vertices;
         m_levelNavMesh.triangles = triangulatedNavMesh.indices;
-        
+
 
         // 1 - Calculate Surface Areas
         float[] triangleSurfaceAreas = CalculateSurfaceAreas(m_levelNavMesh);
@@ -82,7 +82,7 @@ class UtilsNavMesh_Impl
 
         } while (true);
 
-        return Vector3.zero;
+        // return Vector3.zero;
     }
 
     static private float[] CalculateSurfaceAreas(Mesh mesh)
@@ -186,5 +186,5 @@ public class UtilsNavMesh : MonoBehaviour
     {
         UtilsNavMesh_Impl.LoadAndPreprocessNavMesh(0.15f, 0.15f);
     }
-    
+
 }

@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Runtime;
 using System.Collections.Generic;
-
+using UnityEngine.SceneManagement;
 
 static class RandomExtensions
 {
@@ -390,7 +390,10 @@ public class GameManager : MonoBehaviour
         if (m_GameWinner != null)
         {
             // If there is a game winner, restart the level.
-            Application.LoadLevel(Application.loadedLevel);
+            
+            // Application.LoadLevel(Application.loadedLevel); // obsolete
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            
         }
         else
         {
