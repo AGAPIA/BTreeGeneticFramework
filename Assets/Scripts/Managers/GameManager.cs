@@ -4,7 +4,8 @@ using UnityEngine.UI;
 using System.Runtime;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
-
+using UnityEngine.Networking;
+using System.Threading;
 static class RandomExtensions
 {
     public static void Shuffle<T>(this System.Random rng, T[] array)
@@ -36,6 +37,7 @@ public class GlobalAIBlackBox
 
     public void SetSpawnPoints(Transform[] positions)
     {
+
         m_SpawnPoints = positions;
         m_tempDistancesToSpawnPointsSqr = new float[m_SpawnPoints.Length];
     }
@@ -143,7 +145,7 @@ public class GameManager : MonoBehaviour
 
     private bool m_enableTanksTextUI = true;
 
-    public bool m_isTutorialEnabled = true;
+    public bool m_isTutorialEnabled = false;
     public GameObject m_TutorialArrowPrefab;
     public GameObject m_TutorialCirclePrefab;
     public Text m_TutorialMessageText;                  // Reference to the overlay Text to display winning text, etc.
@@ -183,8 +185,40 @@ public class GameManager : MonoBehaviour
 
     GlobalAIBlackBox m_AIGlobalBlackBox = new GlobalAIBlackBox();
 
+    RestUploadingImg m_restUploadingImg = null;
     private void Start()
     {
+
+        ////// DEBUG CODE
+        ///
+        m_restUploadingImg = transform.gameObject.AddComponent<RestUploadingImg>();
+        
+
+        /*
+        /WWWForm form = new 
+        form.AddField("myField", "myData");
+
+        UnityWebRequest postEx = UnityWebRequest.Post("http://0.0.0.0:5000/check_visuals", form);
+        postEx.SendWebRequest();
+
+        if (postEx.result != UnityWebRequest.Result.Success)
+        {
+            Debug.Log(postEx.error);
+        }
+        else
+        {
+            Debug.Log("Form upload complete!");
+        }
+
+
+        StartCoroutine(GetRequest("http://0.0.0.0:5000/check_sounds"));
+        return;
+        //////////////////
+        ///
+        */
+
+
+
         GatherSpawnPoints();
 
         // Create the delays so they only have to be made once.
@@ -206,6 +240,25 @@ public class GameManager : MonoBehaviour
         StartCoroutine(GameLoop());
     }
 
+    /// <TEST STUFF requests>
+    ///
+    IEnumerator GetRequest(string uri)
+    {
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
+        {
+            yield return webRequest.SendWebRequest();
+            if (webRequest.isNetworkError)
+            {
+                Debug.Log("Error: " + webRequest.error);
+            }
+            else
+            {
+                Debug.Log(webRequest.downloadHandler.text);
+            }
+        }
+    }
+    /// </summary>
+
     void SetupTutorial()
     {
         m_TutorialManager = new TutorialManager();
@@ -214,6 +267,13 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
+        // DEBUG CODE
+        if (Time.frameCount % 100 == 0 )
+        {
+            //Thread.Sleep(5000);
+            m_restUploadingImg.DoUploadPNG();
+        }
+
         GatherGlobalBlackboxData();
 
         for (int i = 0; i < m_HumanTanks.Length + m_AiTanks.Length; i++)
