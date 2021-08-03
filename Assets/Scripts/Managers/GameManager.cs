@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 using UnityEngine.Networking;
 using System.Threading;
+
 static class RandomExtensions
 {
     public static void Shuffle<T>(this System.Random rng, T[] array)
@@ -184,40 +185,12 @@ public class GameManager : MonoBehaviour
 
 
     GlobalAIBlackBox m_AIGlobalBlackBox = new GlobalAIBlackBox();
+    DeepTestingSystem m_testingSystem = null;
 
-    RestUploadingImg m_restUploadingImg = null;
     private void Start()
     {
-
-        ////// DEBUG CODE
-        ///
-        m_restUploadingImg = transform.gameObject.AddComponent<RestUploadingImg>();
-        
-
-        /*
-        /WWWForm form = new 
-        form.AddField("myField", "myData");
-
-        UnityWebRequest postEx = UnityWebRequest.Post("http://0.0.0.0:5000/check_visuals", form);
-        postEx.SendWebRequest();
-
-        if (postEx.result != UnityWebRequest.Result.Success)
-        {
-            Debug.Log(postEx.error);
-        }
-        else
-        {
-            Debug.Log("Form upload complete!");
-        }
-
-
-        StartCoroutine(GetRequest("http://0.0.0.0:5000/check_sounds"));
-        return;
-        //////////////////
-        ///
-        */
-
-
+        m_testingSystem = gameObject.AddComponent<DeepTestingSystem>();
+        m_testingSystem.Setup(transform.gameObject);
 
         GatherSpawnPoints();
 
@@ -267,13 +240,6 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        // DEBUG CODE
-        if (Time.frameCount % 100 == 0 )
-        {
-            //Thread.Sleep(5000);
-            m_restUploadingImg.DoUploadPNG();
-        }
-
         GatherGlobalBlackboxData();
 
         for (int i = 0; i < m_HumanTanks.Length + m_AiTanks.Length; i++)
@@ -288,6 +254,8 @@ public class GameManager : MonoBehaviour
         {
             m_TutorialManager.Update();
         }
+
+        m_testingSystem.CustomUpdate();
     }
 
     // This is used to gather data in the global blackbox and make everything visible from environment to the AI side
