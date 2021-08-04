@@ -47,7 +47,10 @@ public class TankManager
     [HideInInspector]
     public TankUI m_tankUI;
     bool m_isSetupFinished = false;
-    
+
+    MeshRenderer[] m_renderers;
+
+
     public void Setup(bool enableTextUI)
     {
         // Get references to the components.
@@ -75,13 +78,13 @@ public class TankManager
         m_ColoredPlayerText = "<color=#" + ColorUtility.ToHtmlStringRGB(m_PlayerColor) + ">PLAYER " + m_PlayerNumber + "</color>";
 
         // Get all of the renderers of the tank.
-        MeshRenderer[] renderers = m_Instance.GetComponentsInChildren<MeshRenderer>();
+        m_renderers = m_Instance.GetComponentsInChildren<MeshRenderer>();
 
         // Go through all the renderers...
-        for (int i = 0; i < renderers.Length; i++)
+        for (int i = 0; i < m_renderers.Length; i++)
         {
             // ... set their material color to the color specific to this tank.
-            renderers[i].material.color = m_PlayerColor;
+            m_renderers[i].material.color = m_PlayerColor;
         }
 
         m_tankUI = new TankUI();
@@ -192,5 +195,17 @@ public class TankManager
         {
             m_tankUI.Update();
         }
+    }
+
+    public Bounds GetBounds3D()
+    {
+        Bounds res = m_renderers[0].bounds;
+        foreach (MeshRenderer meshRendereIter in m_renderers)
+        {
+
+            res.Encapsulate(meshRendereIter.bounds);
+        }
+
+        return res;
     }
 }

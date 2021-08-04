@@ -34,6 +34,10 @@ public class GlobalAIBlackBox
 
     public Dictionary<BoxType, ArrayList> m_boxPositionsByType = new Dictionary<BoxType, ArrayList>();
 
+    // Bounds of the tanks and box objects
+    public Dictionary<int, Bounds> m_tanksBounds = new Dictionary<int, Bounds>(); // Same rule, human AI tanks first
+    public Dictionary<BoxType, ArrayList> m_boxBoundsByType = new Dictionary<BoxType, ArrayList>();
+
     /////////// Helper functions ///////////
 
     public void SetSpawnPoints(Transform[] positions)
@@ -265,17 +269,36 @@ public class GameManager : MonoBehaviour
 
         // Gather all box positions by type
         m_AIGlobalBlackBox.m_boxPositionsByType.Clear();
+        m_AIGlobalBlackBox.m_boxBoundsByType.Clear();
         for (int i = 0; i < (int)BoxType.BOXTYPE_NUMS; i++)
         {
             BoxType boxType = (BoxType)i;
             GameObject[] boxObjects = GameObject.FindGameObjectsWithTag(m_spawnManager.GetTagForBoxType(boxType));
             ArrayList listOfBoxPos = new ArrayList(boxObjects.Length);
+            ArrayList listofBounds = new ArrayList(boxObjects.Length);
             foreach (GameObject obj in boxObjects)
             {
                 listOfBoxPos.Add(obj.transform.position);
+
+                Renderer boxRenderer = obj.GetComponent<Renderer>();
+                listofBounds.Add(boxRenderer.bounds);
             }
 
             m_AIGlobalBlackBox.m_boxPositionsByType.Add(boxType, listOfBoxPos);
+            m_AIGlobalBlackBox.m_boxBoundsByType.Add(boxType, listofBounds);
+            
+        }
+
+
+        // Add 3d bboxes of all tanks active
+        m_AIGlobalBlackBox.m_tanksBounds.Clear();
+        for (int i = 0; i < m_Tanks.Length; i++)
+        {
+            if (!m_Tanks[i].IsAlive())
+                continue;
+
+            var tankBounds = m_Tanks[i].GetBounds3D();
+            m_AIGlobalBlackBox.m_tanksBounds.Add(i, tankBounds);
         }
     }
 
