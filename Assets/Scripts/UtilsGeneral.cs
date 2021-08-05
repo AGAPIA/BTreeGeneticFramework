@@ -21,6 +21,36 @@ public class UtilsGeneral
     static public Vector3 INVALID_POS = new Vector3(-float.MaxValue, -float.MaxValue, -float.MaxValue);
     static public int INVALID_INDEX = -1;
 
+
+    // Converts a 3D bounds to 2D Rect on screen space given camera 
+    static public Rect Bounds3DTo2DRect(Bounds bounds, Camera cam)
+    {
+
+        // Find the 2D on screen rectangle encompasing the 3D bounding box
+        Rect retVal = Rect.MinMaxRect(float.MaxValue, float.MaxValue, float.MinValue, float.MinValue);
+
+        // TODO FIX this
+
+#if false
+        // iterate through the vertices to get the equivalent screen projection
+        for (int i = 0; i < worldCorners.Length; i++)
+        {
+            Vector3 v = m_camera.WorldToScreenPoint(worldCorners[i]);
+            if (v.x < retVal.xMin)
+                retVal.xMin = v.x;
+            if (v.y < retVal.yMin)
+                retVal.yMin = v.y;
+            if (v.x > retVal.xMax)
+                retVal.xMax = v.x;
+            if (v.y > retVal.yMax)
+                retVal.yMax = v.y;
+        }
+#endif
+
+    
+        return retVal;
+    }
+
     static public float lerp(float x, float x0, float x1, float y0, float y1)
     {
         if ((x1 - x0) == 0)

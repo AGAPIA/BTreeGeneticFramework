@@ -13,6 +13,9 @@ public class DeepTestingSystem : MonoBehaviour
 {
     RestUploadingImg m_restUploadingImg = null;
 
+    public bool m_isDataGatheringEnabled = true;
+    public int m_dataGatheringFrameRate = 100;
+
     public DeepTestingSystem(GameObject parentGameObject)
     {
         m_parentGameObject = parentGameObject;
@@ -41,9 +44,10 @@ public class DeepTestingSystem : MonoBehaviour
         Gizmos.DrawWireSphere(center, radius);
     }
 
-    public void Setup(GameObject parentObj)
+    public void Setup(GameObject parentObj, GlobalAIBlackBox globalAIBlackBox)
     {
         m_parentGameObject = parentObj;
+        m_globalAIBlackBox = globalAIBlackBox;
     }
 
     public void CustomUpdate()
@@ -52,53 +56,57 @@ public class DeepTestingSystem : MonoBehaviour
         if (m_restUploadingImg == null)
             return;
 
-        // DEBUG CODE
-        if (Time.frameCount % 100 == 0)
+        DoDataGathering();
+    }
+
+    void DoDataGathering()
+    {
+        if (!m_isDataGatheringEnabled)
+            return;
+
+        // Not the rate ?
+        if (Time.frameCount % m_dataGatheringFrameRate == 0)
+            return;
+
+
+        // yes, time to setup annotation for this frame and send it further
+
+        Dictionary<String, Rect> annotations_entityNameTo2DRect = new Dictionary<string, Rect>();
+
+        // Add tanks 
+        foreach (KeyValuePair<int, Bounds> entry in m_globalAIBlackBox.m_tanksBounds)
         {
-            //Thread.Sleep(5000);
-            m_restUploadingImg.DoUploadPNG();
+            String entityName = String.Format("Tank_{0}", entry.Key);
+            Rect rectValue = UtilsGeneral.Bounds3DTo2DRect(entry.Value, m_camera);
+            annotations_entityNameTo2DRect.Add(entityName, rectValue);
+        }
 
-
-            if (false) // TODO
+        // Add boxes
+        int boxIndex = 0;
+        foreach (KeyValuePair<BoxType, ArrayList> entry in m_globalAIBlackBox.m_boxBoundsByType)
+        {
+            foreach (Bounds entryBounds in entry.Value)
             {
-                // 3D to 2D bounding box, screen space
-                Bounds bounds = m_renderer.bounds;
-                Vector3 c = bounds.center;
-                Vector3 e = bounds.extents;
+                String entityName = String.Format("Box_{0}_{1}", boxIndex, entry.Key.ToString());
+                Rect rectValue = UtilsGeneral.Bounds3DTo2DRect(entryBounds, m_camera);
+                annotations_entityNameTo2DRect.Add(entityName, rectValue);
 
-                // Vertices of the 3D bbox
-                UnityEngine.Vector3[] worldCorners = new[] {
-            new UnityEngine.Vector3( c.x + e.x, c.y + e.y, c.z + e.z ),
-            new UnityEngine.Vector3( c.x + e.x, c.y + e.y, c.z - e.z ),
-            new UnityEngine.Vector3( c.x + e.x, c.y - e.y, c.z + e.z ),
-            new UnityEngine.Vector3( c.x + e.x, c.y - e.y, c.z - e.z ),
-            new UnityEngine.Vector3( c.x - e.x, c.y + e.y, c.z + e.z ),
-            new UnityEngine.Vector3( c.x - e.x, c.y + e.y, c.z - e.z ),
-            new UnityEngine.Vector3( c.x - e.x, c.y - e.y, c.z + e.z ),
-            new UnityEngine.Vector3( c.x - e.x, c.y - e.y, c.z - e.z ),
-            };
-
-                // Find the 2D on screen rectangle encompasing the 3D bounding box
-                Rect retVal = Rect.MinMaxRect(float.MaxValue, float.MaxValue, float.MinValue, float.MinValue);
-
-                // iterate through the vertices to get the equivalent screen projection
-                for (int i = 0; i < worldCorners.Length; i++)
-                {
-                    Vector3 v = m_camera.WorldToScreenPoint(worldCorners[i]);
-                    if (v.x < retVal.xMin)
-                        retVal.xMin = v.x;
-                    if (v.y < retVal.yMin)
-                        retVal.yMin = v.y;
-                    if (v.x > retVal.xMax)
-                        retVal.xMax = v.x;
-                    if (v.y > retVal.yMax)
-                        retVal.yMax = v.y;
-                }
+                boxIndex++;
             }
         }
+
+        /*
+        
+        m_globalAIBlackBox.m_tanksBounds
+
+        // Upload the screnshot PNG image 
+        m_restUploadingImg.DoUploadPNG();
+        */
+
     }
 
     GameObject m_parentGameObject;
+    GlobalAIBlackBox m_globalAIBlackBox;
     GameManager m_gameManager;
     Renderer m_renderer;
     Camera m_camera;

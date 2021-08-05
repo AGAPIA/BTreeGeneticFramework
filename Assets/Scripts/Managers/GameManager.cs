@@ -151,6 +151,8 @@ public class GameManager : MonoBehaviour
     private bool m_enableTanksTextUI = true;
 
     public bool m_isTutorialEnabled = false;
+    public bool m_isDeepTestingEnabled = false;
+
     public GameObject m_TutorialArrowPrefab;
     public GameObject m_TutorialCirclePrefab;
     public Text m_TutorialMessageText;                  // Reference to the overlay Text to display winning text, etc.
@@ -193,9 +195,6 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        m_testingSystem = gameObject.AddComponent<DeepTestingSystem>();
-        m_testingSystem.Setup(transform.gameObject);
-
         GatherSpawnPoints();
 
         // Create the delays so they only have to be made once.
@@ -209,6 +208,11 @@ public class GameManager : MonoBehaviour
         if (m_isTutorialEnabled)
         {
             SetupTutorial();
+        }
+
+        if (m_isDeepTestingEnabled)
+        {
+            SetupDeepTestingSystem();
         }
 
         SetCameraTargets();
@@ -240,6 +244,12 @@ public class GameManager : MonoBehaviour
     {
         m_TutorialManager = new TutorialManager();
         m_TutorialManager.setup(m_AIGlobalBlackBox, m_TutorialMaxIndicatedObjects, m_TutorialArrowPrefab, m_TutorialCirclePrefab, m_TutorialMessageText);
+    }
+
+    void SetupDeepTestingSystem()
+    {
+        m_testingSystem = gameObject.AddComponent<DeepTestingSystem>();
+        m_testingSystem.Setup(transform.gameObject, m_AIGlobalBlackBox);
     }
 
     private void Update()
