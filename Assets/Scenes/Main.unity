@@ -215,6 +215,16 @@ PrefabInstance:
         type: 3}
     - target: {fileID: 3208821062097629625, guid: 16c39a1cc04404797bcc65913fcdf172,
         type: 3}
+      propertyPath: m_isDeepTestingEnabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3208821062097629625, guid: 16c39a1cc04404797bcc65913fcdf172,
+        type: 3}
+      propertyPath: m_isDeepTestingDataGathering
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3208821062097629625, guid: 16c39a1cc04404797bcc65913fcdf172,
+        type: 3}
       propertyPath: m_TutorialMaxIndicatedObjects
       value: 5
       objectReference: {fileID: 0}

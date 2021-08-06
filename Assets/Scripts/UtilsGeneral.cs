@@ -29,13 +29,23 @@ public class UtilsGeneral
         // Find the 2D on screen rectangle encompasing the 3D bounding box
         Rect retVal = Rect.MinMaxRect(float.MaxValue, float.MaxValue, float.MinValue, float.MinValue);
 
-        // TODO FIX this
+        Vector3 center = bounds.center;
+        Vector3 size = bounds.size;
+        Vector3[] worldCorners = new Vector3[] {
+            center + Vector3.right * size.x / 2f + Vector3.up * size.y / 2f + Vector3.forward * size.z / 2f,
+            center + Vector3.right * size.x / 2f + Vector3.up * size.y / 2f - Vector3.forward * size.z / 2f,
+            center + Vector3.right * size.x / 2f - Vector3.up * size.y / 2f + Vector3.forward * size.z / 2f,
+            center + Vector3.right * size.x / 2f - Vector3.up * size.y / 2f - Vector3.forward * size.z / 2f,
+            center - Vector3.right * size.x / 2f + Vector3.up * size.y / 2f + Vector3.forward * size.z / 2f,
+            center - Vector3.right * size.x / 2f + Vector3.up * size.y / 2f - Vector3.forward * size.z / 2f,
+            center - Vector3.right * size.x / 2f - Vector3.up * size.y / 2f + Vector3.forward * size.z / 2f,
+            center - Vector3.right * size.x / 2f - Vector3.up * size.y / 2f - Vector3.forward * size.z / 2f,
+        };
 
-#if false
         // iterate through the vertices to get the equivalent screen projection
         for (int i = 0; i < worldCorners.Length; i++)
         {
-            Vector3 v = m_camera.WorldToScreenPoint(worldCorners[i]);
+            Vector3 v = cam.WorldToScreenPoint(worldCorners[i]);
             if (v.x < retVal.xMin)
                 retVal.xMin = v.x;
             if (v.y < retVal.yMin)
@@ -45,9 +55,7 @@ public class UtilsGeneral
             if (v.y > retVal.yMax)
                 retVal.yMax = v.y;
         }
-#endif
 
-    
         return retVal;
     }
 

@@ -152,6 +152,8 @@ public class GameManager : MonoBehaviour
 
     public bool m_isTutorialEnabled = false;
     public bool m_isDeepTestingEnabled = false;
+    public bool m_isDeepTestingDataGathering = false;
+    public int m_DeepTestingDataGatheringFrameRate = 100;
 
     public GameObject m_TutorialArrowPrefab;
     public GameObject m_TutorialCirclePrefab;
@@ -249,7 +251,9 @@ public class GameManager : MonoBehaviour
     void SetupDeepTestingSystem()
     {
         m_testingSystem = gameObject.AddComponent<DeepTestingSystem>();
-        m_testingSystem.Setup(transform.gameObject, m_AIGlobalBlackBox);
+        m_testingSystem.Setup(transform.gameObject, m_AIGlobalBlackBox,
+            m_isDeepTestingDataGathering, m_DeepTestingDataGatheringFrameRate,
+            m_CameraControl.getCamera());
     }
 
     private void Update()
@@ -269,7 +273,10 @@ public class GameManager : MonoBehaviour
             m_TutorialManager.Update();
         }
 
-        m_testingSystem.CustomUpdate();
+        if (m_isDeepTestingEnabled)
+        {
+            m_testingSystem.CustomUpdate();
+        }
     }
 
     // This is used to gather data in the global blackbox and make everything visible from environment to the AI side
@@ -415,7 +422,7 @@ public class GameManager : MonoBehaviour
     private void SetCameraTargets()
     {
         // Create a collection of transforms the same size as the number of tanks.
-        Transform[] cameraTargetsForTutorial = m_TutorialManager.GetCameraTargets();
+        Transform[] cameraTargetsForTutorial = m_isTutorialEnabled ? m_TutorialManager.GetCameraTargets() : new Transform[] { };
         Transform[] targets = new Transform[m_Tanks.Length + cameraTargetsForTutorial.Length];
 
         // For each of these transforms...
@@ -425,9 +432,13 @@ public class GameManager : MonoBehaviour
             targets[i] = m_Tanks[i].m_Instance.transform;
         }
 
-        for (int i = 0; i < cameraTargetsForTutorial.Length; i++)
+
+        if (m_isTutorialEnabled)
         {
-            targets[m_Tanks.Length + i] = cameraTargetsForTutorial[i];
+            for (int i = 0; i < cameraTargetsForTutorial.Length; i++)
+            {
+                targets[m_Tanks.Length + i] = cameraTargetsForTutorial[i];
+            }
         }
 
         // These are the targets the camera should follow.

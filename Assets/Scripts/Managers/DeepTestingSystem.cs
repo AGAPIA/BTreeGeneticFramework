@@ -13,7 +13,7 @@ public class DeepTestingSystem : MonoBehaviour
 {
     RestUploadingImg m_restUploadingImg = null;
 
-    public bool m_isDataGatheringEnabled = true;
+    public bool m_isDataGatheringEnabled = false;
     public int m_dataGatheringFrameRate = 100;
 
     public DeepTestingSystem(GameObject parentGameObject)
@@ -31,7 +31,6 @@ public class DeepTestingSystem : MonoBehaviour
         m_gameManager = m_parentGameObject.GetComponent<GameManager>();
 
         m_renderer = GetComponent<Renderer>();
-        m_camera = GetComponent<Camera>();
     }
 
     private void OnDrawGizmosSelected()
@@ -44,10 +43,14 @@ public class DeepTestingSystem : MonoBehaviour
         Gizmos.DrawWireSphere(center, radius);
     }
 
-    public void Setup(GameObject parentObj, GlobalAIBlackBox globalAIBlackBox)
+    public void Setup(GameObject parentObj, GlobalAIBlackBox globalAIBlackBox,
+        bool isDataGatheringEnabled, int dataGatheringFrameRate, Camera camera)
     {
         m_parentGameObject = parentObj;
         m_globalAIBlackBox = globalAIBlackBox;
+        m_isDataGatheringEnabled = isDataGatheringEnabled;
+        m_dataGatheringFrameRate = dataGatheringFrameRate;
+        m_camera = camera;
     }
 
     public void CustomUpdate()
@@ -94,15 +97,6 @@ public class DeepTestingSystem : MonoBehaviour
                 boxIndex++;
             }
         }
-
-        /*
-        
-        m_globalAIBlackBox.m_tanksBounds
-
-        // Upload the screnshot PNG image 
-        m_restUploadingImg.DoUploadPNG();
-        */
-
     }
 
     GameObject m_parentGameObject;

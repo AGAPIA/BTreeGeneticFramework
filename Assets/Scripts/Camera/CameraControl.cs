@@ -21,6 +21,8 @@ public class CameraControl : MonoBehaviour
         m_Camera = GetComponentInChildren<Camera>();
     }
 
+    public Camera getCamera() { return m_Camera; }
+
 
     private void FixedUpdate()
     {
