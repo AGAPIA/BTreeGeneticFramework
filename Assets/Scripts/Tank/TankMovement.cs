@@ -3,6 +3,7 @@ using UnityEditor;
 
 public class TankMovement : MonoBehaviour
 {
+    //TODO: implement ml-agents
     public int m_PlayerNumber = 1;              // Used to identify which tank belongs to which player.  This is set by this tank's manager.
     public static float m_Speed = 12f;                 // How fast the tank moves forward and back.
     public float m_TurnSpeed = 180f;            // How fast the tank turns in degrees per second.
