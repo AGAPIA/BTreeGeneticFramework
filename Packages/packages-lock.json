@@ -31,16 +31,18 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.barracuda": {
-      "version": "1.0.4",
+      "version": "2.0.0-pre.3",
       "depth": 1,
       "source": "registry",
       "dependencies": {
-        "com.unity.burst": "1.3.4"
+        "com.unity.burst": "1.3.4",
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.imageconversion": "1.0.0"
       },
       "url": "https://packages.unity.com"
     },
     "com.unity.burst": {
-      "version": "1.3.4",
+      "version": "1.5.4",
       "depth": 2,
       "source": "registry",
       "dependencies": {
@@ -49,7 +51,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.collab-proxy": {
-      "version": "1.5.7",
+      "version": "1.7.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -65,11 +67,11 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.rider": {
-      "version": "2.0.7",
+      "version": "3.0.7",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.test-framework": "1.1.1"
+        "com.unity.ext.nunit": "1.0.6"
       },
       "url": "https://packages.unity.com"
     },
@@ -97,16 +99,30 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ml-agents": {
+      "version": "file:/Users/ciprian/Work/ml-agents/com.unity.ml-agents",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.unity.barracuda": "2.0.0-pre.3",
+        "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.jsonserialize": "1.0.0"
+      }
+    },
+    "com.unity.ml-agents.extensions": {
+      "version": "file:/Users/ciprian/Work/ml-agents/com.unity.ml-agents.extensions",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.unity.ml-agents": "2.1.0-exp.1",
+        "com.unity.modules.physics": "1.0.0"
+      }
+    },
+    "com.unity.multiplayer-hlapi": {
       "version": "1.0.8",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.barracuda": "1.0.4",
-        "com.unity.modules.imageconversion": "1.0.0",
-        "com.unity.modules.jsonserialize": "1.0.0",
-        "com.unity.modules.physics": "1.0.0",
-        "com.unity.modules.physics2d": "1.0.0",
-        "com.unity.modules.unityanalytics": "1.0.0"
+        "nuget.mono-cecil": "0.1.6-preview"
       },
       "url": "https://packages.unity.com"
     },
@@ -151,7 +167,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.timeline": {
-      "version": "1.4.8",
+      "version": "1.5.6",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -179,6 +195,13 @@
         "com.unity.modules.vr": "1.0.0",
         "com.unity.modules.xr": "1.0.0"
       },
+      "url": "https://packages.unity.com"
+    },
+    "nuget.mono-cecil": {
+      "version": "0.1.6-preview",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.modules.ai": {
