@@ -297,8 +297,24 @@ public class GameManager : MonoBehaviour
             {
                 listOfBoxPos.Add(obj.transform.position);
 
-                Renderer boxRenderer = obj.GetComponent<Renderer>();
-                listofBounds.Add(boxRenderer.bounds);
+                MeshRenderer boxRenderer = obj.GetComponent<MeshRenderer>();
+                Bounds objBounds = boxRenderer.bounds;
+
+                for (int childIter = 0; childIter < obj.transform.childCount; childIter++)
+                {
+                    GameObject childObj = obj.transform.GetChild(childIter).gameObject;
+                    if (childObj)
+                    {
+                        MeshRenderer childMeshRenderer = childObj.GetComponent<MeshRenderer>();
+                        if (childMeshRenderer)
+                        {
+                            Bounds boundsOfChildMesh = childMeshRenderer.bounds;
+                            objBounds.Encapsulate(boundsOfChildMesh);                            
+                        }
+                    }
+                }
+
+                listofBounds.Add(objBounds);
             }
 
             m_AIGlobalBlackBox.m_boxPositionsByType.Add(boxType, listOfBoxPos);

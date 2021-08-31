@@ -14,6 +14,40 @@ public class AITanksSpawnConfig
     public Quaternion rotation = Quaternion.identity;
 };
 
+[Serializable]
+public class SerializableRect
+{
+    public float x;
+    public float y;
+    public float width;
+    public float height;
+
+    public SerializableRect(Rect MyRect)
+    {
+        x = MyRect.x;
+        y = MyRect.y;
+        width = MyRect.width;
+        height = MyRect.height;
+    }
+
+    public override string ToString()
+    {
+        return String.Format("[{0}, {1}, {2}, {3}]", x, y, width, height);
+    }
+
+    // Automatic conversion from SerializableRect to Rect
+    public static implicit operator Rect(SerializableRect vRect)
+    {
+        return new Rect(vRect.x, vRect.y, vRect.width, vRect.height);
+    }
+
+    // Same but from Rect to SerializableRect
+    public static implicit operator SerializableRect(Rect vRect)
+    {
+        return new SerializableRect(vRect);
+    }
+}
+
 public class UtilsGeneral
 { 
     static public float MAX_SCORE_VALUE = 1000.0f;

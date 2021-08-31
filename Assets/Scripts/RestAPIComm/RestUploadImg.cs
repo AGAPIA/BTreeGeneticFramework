@@ -2,10 +2,13 @@
 using System.Collections;
 
 using UnityEngine.Networking;
+//using System.Text.Json;
+using AnnotationNameToImgRect = System.Collections.Generic.Dictionary<System.String, SerializableRect>;
+using Newtonsoft.Json;
 
 public class RestUploadingImg : MonoBehaviour
 {
-    public string screenShotURL= "http://0.0.0.0:5001/check_visuals_proxy";
+    public string screenShotURL= "http://192.168.0.128:5001/check_visuals_proxy";
 
     // Use this for initialization
     void Start()
@@ -13,12 +16,12 @@ public class RestUploadingImg : MonoBehaviour
         
     }
 
-    public void DoUploadPNG()
+    public void DoUploadFrameData(AnnotationNameToImgRect frameAnnotations)
     {
-        StartCoroutine(internal_UploadPNG());
+        StartCoroutine(internalUploadFrameData(frameAnnotations));
     }
 
-    IEnumerator internal_UploadPNG()
+    IEnumerator internalUploadFrameData(AnnotationNameToImgRect frameAnnotations)
     {
         // We should only read the screen after all rendering is complete
         yield return new WaitForEndOfFrame();
@@ -40,6 +43,10 @@ public class RestUploadingImg : MonoBehaviour
         WWWForm form = new WWWForm();
         form.AddField("frameCount", Time.frameCount.ToString());
         form.AddBinaryData("fileUpload", bytes, "screenShot.png", "image/png");
+
+        // Serialize the annotations to a JSON string 
+        string annString = JsonConvert.SerializeObject(frameAnnotations);
+        form.AddField("annotations", annString);
 
         // Upload to a cgi script
         using (var w = UnityWebRequest.Post(screenShotURL, form))

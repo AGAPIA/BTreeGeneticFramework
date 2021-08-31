@@ -99,7 +99,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ml-agents": {
-      "version": "file:/Users/ciprian/Work/ml-agents/com.unity.ml-agents",
+      "version": "file:C:/repos/ml-agents/com.unity.ml-agents",
       "depth": 0,
       "source": "local",
       "dependencies": {
@@ -109,7 +109,7 @@
       }
     },
     "com.unity.ml-agents.extensions": {
-      "version": "file:/Users/ciprian/Work/ml-agents/com.unity.ml-agents.extensions",
+      "version": "file:C:/repos/ml-agents/com.unity.ml-agents.extensions",
       "depth": 0,
       "source": "local",
       "dependencies": {
@@ -143,6 +143,15 @@
         "com.unity.modules.unitywebrequest": "1.0.0",
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.androidjni": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.recorder": {
+      "version": "2.5.5",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.timeline": "1.0.0"
       },
       "url": "https://packages.unity.com"
     },
